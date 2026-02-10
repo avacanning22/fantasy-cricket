@@ -10,6 +10,68 @@ from urllib.parse import urljoin, urlparse, parse_qs
 # from datetime import datetime
 # import os
 
+st.set_page_config(layout="wide")
+
+import streamlit.components.v1 as components
+
+components.html("""
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.page-title {
+    font-size: 42px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 10px;
+}
+.subtitle {
+    text-align: center;
+    color: #6b7280;
+    font-size: 18px;
+}
+</style>
+</head>
+<body>
+    <div class="page-title">Leinster Women's Players</div>
+    <div class="subtitle">Fantasy Cricket Scoring & Player Stats</div>
+</body>
+</html>
+""", height=180)
+
+
+STARRINGS_FILE = "starrings.xlsx"
+
+slot_rules = {
+    0: [1.1, 1.2],
+    1: [2.1, 2.2],
+    2: [3.1, 3.2],
+    3: [4],
+    4: "any"
+}
+
+def load_starrings():
+    return pd.read_excel(STARRINGS_FILE)
+
+def build_starrings_lookup():
+    starrings_df = load_starrings()
+
+    lookup = {}
+
+    for col in starrings_df.columns:
+        try:
+            starring_value = float(col)
+        except ValueError:
+            continue  # skip any non-numeric columns just in case
+
+        players = starrings_df[col].dropna().astype(str)
+
+        for player in players:
+            lookup[player.strip()] = starring_value
+
+    return lookup
+
+
 
 USERS_FILE = "users.xlsx"
 
@@ -34,8 +96,20 @@ def save_user(name, username, phone, password):
     df.to_excel(USERS_FILE, index=False)
 
 
+PICKS_FILE = "picks.xlsx"
 
-st.title("Leinster Women's Players")
+def load_picks():
+    try:
+        return pd.read_excel(PICKS_FILE)
+    except FileNotFoundError:
+        return pd.DataFrame(columns=["username", "mayp1", "mayp2", "mayp3", "mayp4", "maypw"])
+
+
+def save_picks(df):
+    df.to_excel(PICKS_FILE, index=False)
+
+
+
 
 def login_screen():
     st.subheader("Login / Register")
@@ -77,9 +151,56 @@ def login_screen():
                 st.session_state["logged_in"] = True
                 st.session_state["username"] = username
                 st.session_state["name"] = user.iloc[0]["name"]
+
+                saved_picks = get_user_picks(username)
+
+                if saved_picks:
+                    st.session_state["selected_players"] = saved_picks
+                    st.session_state["players_selected"] = True
+                else:
+                    st.session_state["players_selected"] = False
+
                 st.rerun()
-            else:
-                st.error("Invalid username or password")
+
+
+
+
+def get_user_picks(username):
+    picks_df = load_picks()
+    if username in picks_df["username"].values:
+        row = picks_df[picks_df["username"] == username].iloc[0]
+        return [
+            row["mayp1"],
+            row["mayp2"],
+            row["mayp3"],
+            row["mayp4"],
+            row["maypw"],
+        ]
+    return None
+
+
+def team_already_exists(username, selected_players):
+    picks_df = load_picks()
+
+    # Compare as sets so order doesn't matter
+    selected_set = set(selected_players)
+
+    for _, row in picks_df.iterrows():
+        if row["username"] == username:
+            continue  # ignore own existing team
+
+        existing_set = {
+            row["mayp1"],
+            row["mayp2"],
+            row["mayp3"],
+            row["mayp4"],
+            row["maypw"],
+        }
+
+        if selected_set == existing_set:
+            return True
+
+    return False
 
 
 
@@ -97,6 +218,10 @@ st.success(f"Logged in as {st.session_state['name']}")
 if st.button("Logout"):
     st.session_state["logged_in"] = False
     st.session_state.pop("username", None)
+
+    st.session_state["logged_in"] = False
+    for key in ["username", "name", "selected_players", "players_selected"]:
+        st.session_state.pop(key, None)
     st.rerun()
 
 
@@ -154,12 +279,23 @@ else:
 
 # ---- Create DataFrame once ----
 df = pd.DataFrame(players)
-df.to_excel("stats.xlsx", index=False)
+starrings_lookup = build_starrings_lookup()
+
+df["starrings"] = df["Player"].map(starrings_lookup).fillna(4)
+
+df.to_excel("players.xlsx", index=False)
+
+
+
 selected = False
 
 if df.empty:
     st.warning("No players found.")
 else:
+    # STARRINGS
+    starrings = load_starrings()
+
+
     # ---- Initialize session state for selected players ----
     if "players_selected" not in st.session_state:
         st.session_state["players_selected"] = False
@@ -174,33 +310,89 @@ else:
     if not st.session_state["players_selected"]:
         st.write("### Select Your 5 Players")
 
+        categories = ["Div 1", "Div 2", "Div 3", "Div 4", "Wildcard"]
+
         for i in range(5):
-            # Make sure the current slot has a value to compare
             current_selection = st.session_state["selected_players"][i]
+            rule = slot_rules[i]
 
-            # Only allow already selected players or new options
-            available_options = [p for p in all_players if p not in st.session_state["selected_players"] or p == current_selection]
+            if rule == "any":
+                eligible_players = df["Player"].tolist()
+            else:
+                eligible_players = df[df["starrings"].isin(rule)]["Player"].tolist()
 
-            # Default to first option if current_selection is None or not in available_options
-            default_index = 0
-            if current_selection in available_options:
-                default_index = available_options.index(current_selection)
+            available_players = [
+                p for p in eligible_players
+                if p not in st.session_state["selected_players"] or p == current_selection
+            ]
 
-            st.session_state["selected_players"][i] = st.selectbox(
-                f"Player {i+1}:",
-                available_options,
-                index=default_index
+            placeholder = "— Select a player —"
+
+            options = [placeholder] + available_players
+
+            if current_selection in available_players:
+                index = options.index(current_selection)
+            else:
+                index = 0  # placeholder
+
+            choice = st.selectbox(
+                f"{categories[i]} Player:",
+                options,
+                index=index,
+                key=f"slot_{i}"
             )
+
+            st.session_state["selected_players"][i] = (
+                None if choice == placeholder else choice
+            )
+
+
+
+
 
         if st.button("Submit Players"):
             if None in st.session_state["selected_players"]:
                 st.warning("Please select all 5 players.")
             else:
+                selected_players = st.session_state["selected_players"]
+                username = st.session_state["username"]
+
+                # 🚫 Check for duplicate team
+                if team_already_exists(username, selected_players):
+                    st.error(
+                        "This exact combination of 5 players has already been selected by another user. "
+                        "Please choose a different team."
+                    )
+                    st.stop()
+
+                picks_df = load_picks()
+
+                new_row = {
+                    "username": username,
+                    "mayp1": st.session_state["selected_players"][0],
+                    "mayp2": st.session_state["selected_players"][1],
+                    "mayp3": st.session_state["selected_players"][2],
+                    "mayp4": st.session_state["selected_players"][3],
+                    "maypw": st.session_state["selected_players"][4],
+                }
+
+                if username in picks_df["username"].values:
+                    picks_df.loc[picks_df["username"] == username, list(new_row.keys())] = list(new_row.values())
+                else:
+                    picks_df = pd.concat([picks_df, pd.DataFrame([new_row])], ignore_index=True)
+
+                save_picks(picks_df)
+
                 st.session_state["players_selected"] = True
-                st.rerun()  # rerun so the selection screen disappears
+                st.success("Your picks have been saved!")
+                st.rerun()
+
+
 
     # ---- Stats / Fantasy screen ----
     else:
+        st.info("You’ve already submitted your picks for this month.")
+
         selected_players = st.session_state["selected_players"]
 
         st.write("### Your Selected Players:")
