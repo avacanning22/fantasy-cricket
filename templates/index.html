@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Cricket</title>
+    <style>
+        body {
+            background-color: #FFF9C4; /* baby yellow */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .logo {
+            width: 150px; /* adjust size */
+            margin-bottom: 50px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            background-color: #FFD54F; /* slightly darker yellow for button */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #FFC107;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Logo at top center -->
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
+
+        <!-- Buttons -->
+        <a href="{{ url_for('how_it_works') }}" class="button">How it Works</a>
+        <a href="{{ url_for('login') }}" class="button">Login / Register</a>
+    </div>
+
+    <footer>
+        &copy; 2026 Fantasy Cricket League
+    </footer>
+</body>
+</html>

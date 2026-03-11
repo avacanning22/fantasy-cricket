@@ -1,0 +1,60 @@
+<h2>{{ player.Player }}</h2>
+<p>Team: {{ player.Team }}</p>
+<p>Starring Level: {{ player.starrings }}</p>
+
+<h3>Monthly Fantasy Scores</h3>
+{% for ms in monthly_scores %}
+    <b>{{ ms.Month }}: {{ ms['Fantasy Score'] }}</b><br>
+    {% for key, value in ms.Breakdown.items() %}
+        {{ key }}: {{ value }}<br>
+    {% endfor %}
+    <hr>
+{% endfor %}
+
+<h3>Match-by-Match Stats</h3>
+<table border="1">
+<tr>
+    {% for col in df_matches[0].keys() %}
+        <th>{{ col }}</th>
+    {% endfor %}
+</tr>
+{% for row in df_matches %}
+<tr>
+    {% for col, val in row.items() %}
+        <td>{{ val }}</td>
+    {% endfor %}
+</tr>
+{% endfor %}
+</table>
+
+<h3>Batting Stats</h3>
+<table border="1">
+<tr>
+    {% for col in df_batting[0].keys() %}
+        <th>{{ col }}</th>
+    {% endfor %}
+</tr>
+{% for row in df_batting %}
+<tr>
+    {% for col, val in row.items() %}
+        <td>{{ val }}</td>
+    {% endfor %}
+</tr>
+{% endfor %}
+</table>
+
+<h3>Dismissal Summary</h3>
+<table border="1">
+<tr>
+    {% for col in howout_counts[0].keys() %}
+        <th>{{ col }}</th>
+    {% endfor %}
+</tr>
+{% for row in howout_counts %}
+<tr>
+    {% for col, val in row.items() %}
+        <td>{{ val }}</td>
+    {% endfor %}
+</tr>
+{% endfor %}
+</table>

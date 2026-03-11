@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>How It Works</title>
+    <style>
+        body {
+            background-color: #FFF9C4; /* Baby yellow */
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            max-width: 600px;
+            margin: 20px auto;
+            line-height: 1.6;
+        }
+        a.button {
+            display: inline-block;
+            margin: 20px 10px;
+            padding: 12px 25px;
+            background-color: #FFC107; /* Button color */
+            color: #000;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        a.button:hover {
+            background-color: #FFA000;
+        }
+    </style>
+</head>
+<body>
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="width:120px; margin-bottom:20px;">
+    <h1>How Fantasy Cricket Works</h1>
+    <p>
+        Welcome to the Fantasy Cricket league! <br>
+        1. Register or log in. <br>
+        2. Pick your favorite players for the upcoming round. <br>
+        3. Earn points based on player performances. <br>
+        4. Track your scores on the dashboard and leaderboard. <br>
+        5. Compete with others and have fun!
+    </p>
+    <a href="{{ url_for('dashboard') }}" class="button">Go to Dashboard</a>
+    <a href="{{ url_for('index') }}" class="button">Back to Home</a>
+</body>
+</html>

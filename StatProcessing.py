@@ -8,9 +8,10 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse, parse_qs
 # from datetime import datetime
-# import os
+import os
 from points import calculate_fantasy_score
 import re
+import random
 
 
 st.set_page_config(layout="wide")
@@ -209,6 +210,199 @@ def login_screen():
 
 
 
+def display_leaderboard(round_name):
+    """
+    Display top 10 players by fantasy points for the given round.
+    """
+    PLAYERS_FILE = "players.xlsx"
+    score_column = f"{round_name}_score"
+
+    try:
+        players_df = pd.read_excel(PLAYERS_FILE)
+    except FileNotFoundError:
+        st.error("Players file not found.")
+        return
+
+    if score_column not in players_df.columns:
+        st.warning(f"No scores found for round {round_name}.")
+        return
+
+    # Ensure scores are numeric for sorting
+    players_df[score_column] = pd.to_numeric(players_df[score_column], errors="coerce").fillna(0)
+
+    # Sort descending and take top 10
+    top_players = players_df.sort_values(by=score_column, ascending=False).head(10)
+
+    st.write(f"### 🏆 Leaderboard — Top 10 Players for {round_name}")
+    leaderboard_df = top_players[["Player", score_column]].reset_index(drop=True)
+    leaderboard_df.rename(columns={score_column: "Points"}, inplace=True)
+    st.table(leaderboard_df)
+
+
+def display_participant_leaderboard(round_name):
+
+    PICKS_FILE = "picks.xlsx"
+    score_column = f"{round_name}_score"
+
+    try:
+        picks_df = pd.read_excel(PICKS_FILE)
+    except FileNotFoundError:
+        st.error("Picks file not found.")
+        return
+
+    if score_column not in picks_df.columns:
+        st.warning("No team scores available yet.")
+        return
+
+    # Only include rows where a score exists
+    leaderboard_df = picks_df[picks_df[score_column].notna()].copy()
+
+    if leaderboard_df.empty:
+        st.info("No teams have been submitted yet.")
+        return
+
+    leaderboard_df[score_column] = pd.to_numeric(
+        leaderboard_df[score_column], errors="coerce"
+    )
+
+    leaderboard_df = leaderboard_df.dropna(subset=[score_column])
+
+    leaderboard_df[score_column] = leaderboard_df[score_column].astype(int)
+
+    leaderboard_df = leaderboard_df.sort_values(
+        by=score_column,
+        ascending=False
+    )
+
+    leaderboard_df = leaderboard_df[["username", score_column]].reset_index(drop=True)
+    leaderboard_df.index = leaderboard_df.index + 1
+
+    leaderboard_df.rename(columns={
+        "username": "Participant",
+        score_column: "Points"
+    }, inplace=True)
+
+    st.write(f"### 🏆 Participant Leaderboard — {round_name}")
+    st.table(leaderboard_df)
+
+
+
+# def update_team_score(username, round_name):
+#     """
+#     Calculate and update the total fantasy score for a user's selected team
+#     for the given round.
+#     Adds/updates a column in picks.xlsx named {ROUNDNAME}_score.
+#     """
+#     PLAYERS_FILE = "players.xlsx"
+#     PICKS_FILE = "picks.xlsx"
+    
+#     # Load data
+#     try:
+#         players_df = pd.read_excel(PLAYERS_FILE)
+#         picks_df = pd.read_excel(PICKS_FILE)
+#     except FileNotFoundError:
+#         st.error("Players or picks file not found.")
+#         return
+
+#     score_column = f"{round_name}_score"  # for players
+#     team_score_column = f"{round_name}_score"  # for picks
+
+#     # Ensure player scores column exists
+#     if score_column not in players_df.columns:
+#         st.warning(f"No scores found for round {round_name}.")
+#         return
+
+#     # Ensure picks_df has this column
+#     if team_score_column not in picks_df.columns:
+#         picks_df[team_score_column] = None
+
+#     # Get user row
+#     if username not in picks_df["username"].values:
+#         st.warning(f"No picks found for user {username}.")
+#         return
+
+#     user_row = picks_df[picks_df["username"] == username].iloc[0]
+
+#     # Get the 5 player picks for this round
+#     pick_cols = [f"{round_name}p{i}" for i in [1,2,3,4]] + [f"{round_name}pw"]
+#     selected_players = [user_row.get(c) for c in pick_cols if pd.notna(user_row.get(c))]
+
+#     # Sum their scores
+#     total_score = 0
+#     for player_name in selected_players:
+#         player_match = players_df[players_df["Player"] == player_name]
+#         if not player_match.empty:
+#             score = pd.to_numeric(player_match.iloc[0].get(score_column, 0), errors="coerce")
+#             total_score += score
+
+#     # Update picks_df
+#     picks_df.loc[picks_df["username"] == username, team_score_column] = total_score
+#     picks_df.to_excel(PICKS_FILE, index=False)
+
+#     return total_score
+
+
+def update_team_score(username, round_name):
+    """
+    Calculate and update the total fantasy score for a user's selected team
+    for the given round.
+    Only writes a score if the user has submitted picks.
+    """
+
+    PLAYERS_FILE = "players.xlsx"
+    PICKS_FILE = "picks.xlsx"
+
+    try:
+        players_df = pd.read_excel(PLAYERS_FILE)
+        picks_df = pd.read_excel(PICKS_FILE)
+    except FileNotFoundError:
+        st.error("Players or picks file not found.")
+        return
+
+    score_column = f"{round_name}_score"
+
+    # Ensure player score column exists
+    if score_column not in players_df.columns:
+        st.warning(f"No scores found for round {round_name}.")
+        return
+
+    if username not in picks_df["username"].values:
+        return
+
+    user_index = picks_df[picks_df["username"] == username].index[0]
+    user_row = picks_df.loc[user_index]
+
+    pick_cols = [f"{round_name}p{i}" for i in [1,2,3,4]] + [f"{round_name}pw"]
+
+    # If user has not picked any players, do nothing
+    selected_players = [user_row.get(c) for c in pick_cols if pd.notna(user_row.get(c))]
+
+    if len(selected_players) == 0:
+        return
+
+    total_score = 0
+
+    for player_name in selected_players:
+        player_match = players_df[players_df["Player"] == player_name]
+
+        if not player_match.empty:
+            score = pd.to_numeric(
+                player_match.iloc[0].get(score_column),
+                errors="coerce"
+            )
+
+            if pd.notna(score):
+                total_score += score
+
+    # Only now create/write the score column
+    if score_column not in picks_df.columns:
+        picks_df[score_column] = None
+
+    picks_df.loc[user_index, score_column] = total_score
+
+    picks_df.to_excel(PICKS_FILE, index=False)
+
+    return total_score
 
 
 def get_user_picks(username, round_name):
@@ -253,6 +447,209 @@ def team_already_exists(username, selected_players, active_round):
             return True
 
     return False
+
+
+def generate_random_team(df, slot_rules, existing_teams):
+    """
+    df: DataFrame of all players with 'Player' and 'starrings' columns
+    slot_rules: dict mapping slot index to starrings filter (or 'any')
+    existing_teams: list of sets representing all teams already submitted
+    """
+    max_attempts = 100
+    players_list = df["Player"].tolist()
+
+    for attempt in range(max_attempts):
+        team = []
+        for i in range(5):
+            rule = slot_rules[i]
+            if rule == "any":
+                eligible_players = players_list
+            else:
+                eligible_players = df[df["starrings"].isin(rule)]["Player"].tolist()
+            
+            # Exclude already selected players in this team
+            available_players = [p for p in eligible_players if p not in team]
+            team.append(random.choice(available_players))
+
+        # Check for duplicates
+        if set(team) not in existing_teams:
+            return team
+    
+    raise ValueError("Unable to generate a unique random team after multiple attempts")
+
+
+def calculate_all_player_scores(period_name):
+
+    st.write("Running score calculation for:", period_name)
+
+    PLAYERS_FILE = "players.xlsx"
+    score_column = f"{period_name}_score"
+
+    try:
+        players_df = pd.read_excel(PLAYERS_FILE)
+    except FileNotFoundError:
+        return
+
+    if score_column not in players_df.columns:
+        players_df[score_column] = None
+
+    allowed_teams = {"Leinster W1", "Leinster W2", "Leinster W3"}
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    scores = []
+
+    for _, player_row in players_df.iterrows():
+
+        player_id = player_row["Player No"]
+        starring_level = player_row["starrings"]
+
+        try:
+
+            # ---------------- MATCH REPORT ----------------
+            runreport_url = f"https://www2.cricketstatz.com/ss/linkreport?mode=53&playerid={player_id}&club=4537&season=2025&grade=0&pool="
+            rr_resp = requests.get(runreport_url, headers=headers)
+
+            df_matches = pd.DataFrame()
+
+            if rr_resp.status_code == 200:
+                rr_soup = BeautifulSoup(rr_resp.text, "html.parser")
+                rr_table = rr_soup.find("table")
+
+                if rr_table:
+                    rows = rr_table.find_all("tr")
+
+                    table_data = []
+                    for tr in rows:
+                        cells = [td.get_text(strip=True) for td in tr.find_all("td")]
+                        if cells:
+                            table_data.append(cells)
+
+                    headers_row = table_data[0]
+                    data_rows = table_data[1:]
+
+                    seen = {}
+                    unique_headers = []
+                    for h in headers_row:
+                        if h in seen:
+                            seen[h] += 1
+                            unique_headers.append(f"{h}_{seen[h]}")
+                        else:
+                            seen[h] = 0
+                            unique_headers.append(h)
+
+                    df_matches = pd.DataFrame(data_rows, columns=unique_headers)
+
+                    if "Team" in df_matches.columns:
+                        df_matches = df_matches[df_matches["Team"].isin(allowed_teams)]
+
+                    df_matches["Economy"] = (
+                        pd.to_numeric(df_matches.iloc[:, 11], errors="coerce") /
+                        pd.to_numeric(df_matches.iloc[:, 9], errors="coerce")
+                    ).round(2)
+
+            # ---------------- HOW OUT REPORT ----------------
+            howout_report_url = (
+                f"https://www2.cricketstatz.com/ss/linkreport"
+                f"?mode=55&howout=-1&bowlerid={player_id}&club=4536&oppclub=4537"
+                f"&season=2025&grade=0&pool="
+            )
+
+            ho_resp = requests.get(howout_report_url, headers=headers)
+
+            howout_counts = pd.DataFrame()
+
+            if ho_resp.status_code == 200:
+                ho_soup = BeautifulSoup(ho_resp.text, "html.parser")
+                ho_table = ho_soup.find("table")
+
+                if ho_table:
+                    rows = ho_table.find_all("tr")
+                    howout_list = []
+
+                    for tr in rows[1:]:
+                        cells = [td.get_text(strip=True) for td in tr.find_all("td")]
+                        if len(cells) >= 8:
+                            team_name = cells[2]
+                            if team_name in allowed_teams:
+                                howout_list.append(cells[7])
+
+                    if howout_list:
+                        howout_counts = pd.Series(howout_list).value_counts().reset_index()
+                        howout_counts.columns = ["How Out", "Count"]
+
+            # ---------------- BATTING REPORT ----------------
+            batting_report_url = f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1&playerid={player_id}&club=4537&season=2025&grade=0&pool="
+
+            bat_resp = requests.get(batting_report_url, headers=headers)
+
+            df_batting = pd.DataFrame()
+
+            if bat_resp.status_code == 200:
+                bat_soup = BeautifulSoup(bat_resp.text, "html.parser")
+                table = bat_soup.find("table")
+
+                if table:
+                    rows = table.find_all("tr")
+                    table_data = []
+
+                    for tr in rows:
+                        cells = [td.get_text(strip=True) for td in tr.find_all("td")]
+                        if cells:
+                            table_data.append(cells)
+
+                    headers_row = table_data[0]
+                    data_rows = table_data[1:]
+
+                    new_rows = []
+
+                    for row in data_rows:
+
+                        new_row = row.copy()
+
+                        val_runs = row[10]
+                        val_balls = row[13]
+
+                        val_runs_clean = val_runs.replace("*", "").strip() if isinstance(val_runs, str) else val_runs
+                        val_balls_clean = val_balls.strip() if isinstance(val_balls, str) else val_balls
+
+                        try:
+                            if str(val_runs_clean).lower() == "dnb":
+                                runs_per_ball = "DNB"
+                                sr_val = "DNB"
+                            else:
+                                runs = float(val_runs_clean)
+                                balls = float(val_balls_clean)
+                                runs_per_ball = round(runs / balls, 2) if balls != 0 else 0
+                                sr_val = round((runs / balls) * 100, 2) if balls != 0 else 0
+                        except:
+                            runs_per_ball = "Error"
+                            sr_val = "Error"
+
+                        new_row.append(runs_per_ball)
+                        new_row.append(sr_val)
+                        new_rows.append(new_row)
+
+                    headers_row.append("Runs/Balls")
+                    headers_row.append("SR")
+
+                    df_batting = pd.DataFrame(new_rows, columns=headers_row)
+
+            # ---------------- CALCULATE SCORE ----------------
+            score, breakdown = calculate_fantasy_score(
+                df_matches=df_matches,
+                df_batting=df_batting,
+                howout_counts=howout_counts,
+                starring_level=starring_level
+            )
+
+            scores.append(score)
+
+        except Exception as e:
+            print("Error:", player_row["Player"], e)
+            scores.append(0)
+
+    players_df[score_column] = scores
+    players_df.to_excel(PLAYERS_FILE, index=False)
 
 
 
@@ -327,6 +724,12 @@ if st.session_state.get("is_admin", False): # ADMIN DASH
             next_index = (current_month_index + 1) % len(months)
             next_month = months[next_index]
             next_round_name = f"{next_month}2025"  # You can adjust year dynamically if needed
+
+            # ---- CALCULATE SCORES FOR NEW ROUND ----
+            calculate_all_player_scores(next_round_name)
+
+            # if last_round:
+            #     calculate_all_player_scores(last_round)
 
             # Set active round
             set_active_round(next_round_name)
@@ -444,7 +847,8 @@ starrings_lookup = build_starrings_lookup()
 
 df["starrings"] = df["Player"].map(starrings_lookup).fillna(4)
 
-df.to_excel("players.xlsx", index=False)
+if not os.path.exists("players.xlsx"):
+    df.to_excel("players.xlsx", index=False)
 
 
 
@@ -461,9 +865,22 @@ else:
     if "players_selected" not in st.session_state:
         st.session_state["players_selected"] = False
 
+
+    selected_players = st.session_state.get("selected_players", [])
+    valid_players = [p for p in selected_players if p is not None]
+
     # Ensure selected_players is a list of length 5
     if "selected_players" not in st.session_state or len(st.session_state["selected_players"]) != 5:
-        st.session_state["selected_players"] = [None] * 5
+        # valid_players = [p for p in selected_players if p is not None]
+
+        if not valid_players:
+            st.warning("No players available to display stats.")
+            st.stop()
+
+        selected_player = st.selectbox(
+            "Select a player to view stats:",
+            valid_players
+        )
 
     all_players = df["Player"].tolist()
 
@@ -535,10 +952,54 @@ else:
 
         if user_row is not None:
             latest_team = [user_row.get(c, None) for c in latest_cols]
-            st.info("Showing your latest submitted team:")
-            st.write("Latest Picks:", latest_team)
-            st.session_state["selected_players"] = latest_team
-            st.session_state["players_selected"] = True
+
+            if any(p == "X" for p in latest_team):
+                st.error(
+                    "You did not submit your picks within the selection window. "
+                    "You have been assigned a random team."
+                )
+
+                last_round = get_last_round()
+                if not last_round:
+                    st.error("No last round found to assign random team.")
+                    st.stop()
+
+                # Columns for last round
+                round_cols = [f"{last_round}p{i}" for i in [1,2,3,4]] + [f"{last_round}pw"]
+                latest_cols = ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
+
+                # Build existing teams set from last round
+                existing_teams = []
+                for _, row in picks_df.iterrows():
+                    team = set([row[c] for c in round_cols if pd.notna(row.get(c)) and row.get(c) not in [None, ""]])
+                    if team:
+                        existing_teams.append(team)
+
+                random_team = generate_random_team(df, slot_rules, existing_teams)
+
+                # Write random team to last round columns
+                for i, col in enumerate(round_cols):
+                    picks_df.loc[picks_df["username"] == username, col] = random_team[i]
+
+                # Update latest picks as well
+                for i, col in enumerate(latest_cols):
+                    picks_df.loc[picks_df["username"] == username, col] = random_team[i]
+
+                save_picks(picks_df)
+
+                # Calculate score for the random team
+                update_team_score(username, last_round)
+
+                st.session_state["selected_players"] = random_team
+                st.session_state["players_selected"] = True
+
+                st.success("Random team assigned successfully!")
+                st.write("Your assigned team:", random_team)
+            else:
+                st.info("Showing your latest submitted team:")
+                st.write("Latest Picks:", latest_team)
+                st.session_state["selected_players"] = latest_team
+                st.session_state["players_selected"] = True
         else:
             st.warning("You did not submit a team in the last round.")
             st.session_state["selected_players"] = [None]*5
@@ -626,6 +1087,12 @@ else:
 
                 st.session_state["players_selected"] = True
                 st.success("Your picks have been saved!")
+                # st.rerun()
+
+                # Update team total score
+                total_score = update_team_score(username, active_round)
+                st.success(f"Your team total score: {total_score}")
+                st.session_state["players_selected"] = True
                 st.rerun()
 
 
@@ -633,6 +1100,14 @@ else:
     # ---- Stats / Fantasy screen ----
     else:
         selected_players = st.session_state["selected_players"]
+
+        round_to_display = active_round if active_round else get_last_round()
+
+        if round_to_display:
+            display_leaderboard(round_to_display)
+            display_participant_leaderboard(round_to_display)
+        else:
+            st.info("No round scores available yet.")
 
         st.write("### Your Selected Players:")
         st.write(selected_players)
@@ -642,11 +1117,11 @@ else:
 
         row = df[df["Player"] == selected_player].iloc[0]
 
-        st.write("### Player Details")
-        st.write("**Player No:**", row["Player No"])
-        st.write("**Name:**", row["Player"])
-        st.write("**Team:**", row["Team"])
-        st.markdown(f"[Open stats page]({row['Stats Link']})")
+        st.write(f"### {row["Player"]}")
+        # st.write("**Player No:**", row["Player No"])
+        # st.write("**Name:**", row["Player"])
+        # st.write("**Team:**", row["Team"])
+        # st.markdown(f"[Open stats page]({row['Stats Link']})")
 
 
 
@@ -799,7 +1274,7 @@ else:
                 headers_row.append("SR")
 
                 df_batting = pd.DataFrame(new_rows, columns=headers_row)
-                st.dataframe(df_batting)
+                # st.dataframe(df_batting)
 
 
             else:
@@ -873,4 +1348,7 @@ else:
             for key, value in ms["Breakdown"].items():
                 st.write(f"{key}: {value}")
             st.write("---")
+
+
+
 

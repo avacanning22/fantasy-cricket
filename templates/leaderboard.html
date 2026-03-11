@@ -1,0 +1,14 @@
+<h1>Leaderboard - {{ round_name }}</h1>
+<table border="1">
+    <tr>
+        <th>Player</th>
+        <th>Points</th>
+    </tr>
+    {% for player in leaderboard %}
+    <tr>
+        <td>{{ player['Player'] }}</td>
+        <td>{{ player['Points'] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+<a href="{{ url_for('dashboard') }}">Back to Dashboard</a>

@@ -1,0 +1,54 @@
+<h1>Admin Dashboard</h1>
+
+<h2>All Users</h2>
+<table border="1">
+  <tr>
+    {% for col in users[0].keys() %}
+    <th>{{ col }}</th>
+    {% endfor %}
+  </tr>
+  {% for user in users %}
+  <tr>
+    {% for val in user.values() %}
+    <td>{{ val }}</td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>All Picks</h2>
+<table border="1">
+  <tr>
+    {% for col in picks[0].keys() %}
+    <th>{{ col }}</th>
+    {% endfor %}
+  </tr>
+  {% for pick in picks %}
+  <tr>
+    {% for val in pick.values() %}
+    <td>{{ val }}</td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Competition Control</h2>
+{% if current_round %}
+<p>Current Round: <b>{{ current_round }}</b></p>
+<form method="POST">
+  <button type="submit" name="action" value="close_round">Close Current Round</button>
+</form>
+{% else %}
+<p>No active round</p>
+{% endif %}
+<form method="POST">
+  <button type="submit" name="action" value="open_round">Open Next Round</button>
+</form>
+
+<h2>Upload Picks / Starrings</h2>
+<form method="POST" enctype="multipart/form-data">
+  <input type="file" name="upload_file">
+  <button type="submit">Upload</button>
+</form>
+
+<a href="{{ url_for('logout') }}">Logout</a>
