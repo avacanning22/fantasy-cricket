@@ -5,7 +5,7 @@
     <title>How It Works</title>
     <style>
         body {
-            background-color: #FFF9C4; /* Baby yellow */
+            background-color: #FFF9C4;
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 50px;
@@ -13,16 +13,20 @@
         h1 {
             color: #333;
         }
+        h2 {
+            margin-top: 40px;
+            color: #333;
+        }
         p {
-            max-width: 600px;
-            margin: 20px auto;
+            max-width: 700px;
+            margin: 15px auto;
             line-height: 1.6;
         }
         a.button {
             display: inline-block;
-            margin: 20px 10px;
+            margin: 30px 10px;
             padding: 12px 25px;
-            background-color: #FFC107; /* Button color */
+            background-color: #FFC107;
             color: #000;
             text-decoration: none;
             border-radius: 8px;
@@ -34,16 +38,65 @@
     </style>
 </head>
 <body>
-    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="width:120px; margin-bottom:20px;">
-    <h1>How Fantasy Cricket Works</h1>
-    <p>
-        Welcome to the Fantasy Cricket league! <br>
-        1. Register or log in. <br>
-        2. Pick your favorite players for the upcoming round. <br>
-        3. Earn points based on player performances. <br>
-        4. Track your scores on the dashboard and leaderboard. <br>
-        5. Compete with others and have fun!
-    </p>
-    <a href="{{ url_for('index') }}" class="button">Back to Home</a>
+
+<img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="width:120px; margin-bottom:20px;">
+
+<h1>Fantasy Cricket League</h1>
+
+<h2>What are we?</h2>
+<p>
+Summer 2026, LCC's women section is running a fantasy cricket league for players, friends and family to support the club and follow the section's progress.
+</p>
+
+<p>
+Fantasy cricket is just like any other fantasy league, you'll pick teams at the beginning of every month and if your selected players do well, you'll earn points.
+</p>
+
+<p>
+The twist is: the players you pick won't be professional players in leagues or tournaments — it will be our very own club players.
+</p>
+
+<h2>How does it work?</h2>
+<p>
+For summer 2026 there will be 4 drafts that align with the 4 Cricket Leinster starting lists.
+</p>
+
+<p>
+You will pick 5 players: one from each team in the section and one captain from any team of your choosing.
+</p>
+
+<h2>How to join?</h2>
+<p>
+To enter the game you pay a once-off entry fee of £30. This can be Revoluted to Jenny Sparrow (Revtag @jennysparrow). This money will all go to help fund the women's section over the summer.
+</p>
+
+<p>
+When you sign up you will be asked to provide your full name and phone number.
+</p>
+
+<p>
+You will be added to a private WhatsApp group that will receive two texts per month: 
+"DRAFT NOW OPEN FOR 1 WEEK" and "DRAFT CLOSING AT MIDNIGHT TONIGHT".
+</p>
+
+<p>
+This is a reminder to select your team for the next month. If a team is not selected for the month in the draft window, a random team will be assigned to you to keep you in the game.
+</p>
+
+<h2>How do I win?</h2>
+<p>
+Pick the players who earn the most points. There are points for runs, wickets, catches, stumpings, good economies and loads more things.
+</p>
+
+<p>
+There will be a table of highest point earners published each month.
+</p>
+
+<p>
+<strong>The winner of the Fantasy League gets £200 prize!</strong>
+</p>
+
+<a href="{{ url_for('index') }}" class="button">Back to Home</a>
+
 </body>
 </html>
