@@ -6,7 +6,7 @@
     <title>Fantasy Cricket</title>
     <style>
         body {
-            background-color: #FFF9C4; /* baby yellow */
+            background-color: #FFF9C4;
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
@@ -24,9 +24,24 @@
             text-align: center;
         }
 
+        .welcome {
+            font-size: 40px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .title {
+            font-size: 55px;
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 40px;
+            color: #333;
+        }
+
         .logo {
-            width: 150px; /* adjust size */
-            margin-bottom: 50px;
+            width: 150px;
+            margin: 20px 0;
         }
 
         .button {
@@ -36,7 +51,7 @@
             font-size: 18px;
             font-weight: bold;
             color: #333;
-            background-color: #FFD54F; /* slightly darker yellow for button */
+            background-color: #FFD54F;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -57,17 +72,23 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Logo at top center -->
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
 
-        <!-- Buttons -->
-        <a href="{{ url_for('how_it_works') }}" class="button">How it Works</a>
-        <a href="{{ url_for('login') }}" class="button">Login / Register</a>
-    </div>
+<div class="container">
 
-    <footer>
-        &copy; 2026 Fantasy Cricket League
-    </footer>
+    <div class="welcome">Welcome to</div>
+
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
+
+    <div class="title">Fantasy League</div>
+
+    <a href="{{ url_for('how_it_works') }}" class="button">Information and Game Rules</a>
+    <a href="{{ url_for('login') }}" class="button">Login / Sign Up</a>
+
+</div>
+
+<footer>
+    &copy; 2026 Fantasy Cricket League
+</footer>
+
 </body>
 </html>
