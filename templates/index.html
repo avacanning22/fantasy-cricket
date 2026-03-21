@@ -27,21 +27,25 @@
         .welcome {
             font-size: 40px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 5px; /* tight gap */
             color: #333;
         }
 
         .title {
             font-size: 55px;
             font-weight: bold;
-            margin-top: 10px;
-            margin-bottom: 40px;
+            margin-top: 0;
+            margin-bottom: 5px; /* tight gap */
             color: #333;
         }
 
         .logo {
-            width: 150px;
-            margin: 20px 0;
+            width: 250px; /* bigger logo */
+            margin: 5px 0; /* tight gap */
+        }
+
+        .buttons {
+            margin-top: 30px; /* space between top section and buttons */
         }
 
         .button {
@@ -81,8 +85,10 @@
 
     <div class="title">Fantasy League</div>
 
-    <a href="{{ url_for('how_it_works') }}" class="button">Information and Game Rules</a>
-    <a href="{{ url_for('login') }}" class="button">Login / Sign Up</a>
+    <div class="buttons">
+        <a href="{{ url_for('how_it_works') }}" class="button">Information and Game Rules</a>
+        <a href="{{ url_for('login') }}" class="button">Login / Sign Up</a>
+    </div>
 
 </div>
 

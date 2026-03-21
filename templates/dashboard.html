@@ -1,15 +1,261 @@
-<!-- templates/dashboard.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Dashboard</title>
+
+    <style>
+        body {
+            background-color: #FFF9C4;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* -------- NAVBAR -------- */
+        .navbar {
+            background-color: #800000; /* maroon */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            color: white;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-left img {
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        .navbar-left .title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .navbar-right a {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 8px 18px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #800000; /* maroon text on buttons */
+            background-color: #FFD54F; /* bright yellow */
+            border-radius: 6px;
+            text-decoration: none;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .navbar-right a:hover {
+            background-color: #FFC107;
+            color: #5A0000;
+        }
+
+        /* -------- CONTAINER -------- */
+        .container {
+            width: 95%;
+            margin: 20px auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 40px;
+            color: #333;
+        }
+
+        .round-info {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 10px;
+            margin-bottom: 30px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .flash {
+            padding: 10px;
+            margin: 10px auto;
+            width: 60%;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .flash.success { background: #c8e6c9; }
+        .flash.danger { background: #ffcdd2; }
+        .flash.warning { background: #fff3cd; }
+
+        /* -------- BIG BOXES -------- */
+        .big-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .big-box h2 {
+            text-align: left;
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #FFD54F;
+            padding-bottom: 5px;
+        }
+
+        .main {
+            display: flex;
+            margin-top: 20px;
+            gap: 20px;
+        }
+
+        .panel {
+            flex: 1;
+            background: #fff8dc;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        h2.panel-title {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 22px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background-color: #FFD54F;
+            color: #333;
+        }
+
+        tr:hover {
+            background-color: #fff3cd;
+        }
+
+        .score-box {
+            margin-top: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome, {{ username }}!</h1>
-    <p>Current Round: {{ round_name }}</p>
 
-    <a href="{{ url_for('leaderboard') }}">View Leaderboard</a> |
-    <a href="{{ url_for('logout') }}">Logout</a>
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <div class="navbar-left">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+            <div class="title">LCC Women's Fantasy League</div>
+        </div>
+        <div class="navbar-right">
+            <a href="{{ url_for('point_earning_details') }}">Point Earning Details</a>
+            <a href="{{ url_for('fixtures') }}">Fixtures</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <h1>Welcome, {{ session['name'] }}!</h1>
+        <div class="round-info">Current Round: {{ round_name }}</div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <!-- -------- THIS MONTH BOX -------- -->
+        <div class="big-box">
+            <h2>This Month</h2>
+
+            <div class="main">
+
+                <!-- PLAYER LEADERBOARD -->
+                <div class="panel">
+                    <h2 class="panel-title">Player Leaderboard</h2>
+                    <table>
+                        <tr><th>Player</th><th>Points</th></tr>
+                        {% if player_leaderboard %}
+                            {% for p in player_leaderboard %}
+                                <tr>
+                                    <td>{{ p['Player'] }}</td>
+                                    <td>{{ p['Points']|clean_float }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="2">No data</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+
+                <!-- PARTICIPANT LEADERBOARD -->
+                <div class="panel">
+                    <h2 class="panel-title">Participant Leaderboard</h2>
+                    <table>
+                        <tr><th>Participant</th><th>Points</th></tr>
+                        {% if user_leaderboard %}
+                            {% for u in user_leaderboard %}
+                                <tr>
+                                    <td>{{ u['Participant'] }}</td>
+                                    <td>{{ u['Points']|clean_float }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="2">No data</td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+
+                <!-- USER PICKS -->
+                <div class="panel">
+                    <h2 class="panel-title">Your Team for this Month</h2>
+                    {% if user_picks %}
+                        <table>
+                            <tr><th>Player</th><th>Score</th></tr>
+                            {% for p in user_picks %}
+                                <tr>
+                                    <td>{{ p }}</td>
+                                    <td>{{ player_scores.get(p, 0)|clean_float }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% else %}
+                        <p style="text-align:center;">No team selected yet.</p>
+                    {% endif %}
+                    <div class="score-box">
+                        Total Score: {{ user_score|clean_float }}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- -------- YOUR SCORE BOX -------- -->
+        <div class="big-box">
+            <h2>Your Score</h2>
+            <p style="text-align:center; color:#555;">Your score details will appear here.</p>
+        </div>
+
+    </div>
+
 </body>
 </html>

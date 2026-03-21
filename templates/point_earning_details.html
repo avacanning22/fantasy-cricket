@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Point Earning Details - {{ round_name }}</title>
+
+    <style>
+        body {
+            background-color: #FFF9C4;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background-color: #800000; /* maroon */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            color: white;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-left img {
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        .navbar-left .title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .navbar-right a {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 8px 18px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #800000; /* maroon text on buttons */
+            background-color: #FFD54F; /* bright yellow */
+            border-radius: 6px;
+            text-decoration: none;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .navbar-right a:hover {
+            background-color: #FFC107;
+            color: #5A0000;
+        }
+
+        /* Container */
+        .container {
+            width: 95%;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            font-size: 40px;
+            color: #333;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #FFD54F;
+            color: #333;
+            text-align: center;
+        }
+
+        td:first-child {
+            width: 70%;
+            text-align: left;
+            padding-left: 15px;
+        }
+
+        td:last-child {
+            width: 30%;
+            text-align: center;
+        }
+
+        tr:hover {
+            background-color: #fff3cd;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 10px auto;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            background-color: #FFD54F;
+            border-radius: 8px;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .button:hover {
+            background-color: #FFC107;
+        }
+
+        .bottom {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <div class="navbar-left">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+            <div class="title">LCC Women's Fantasy League</div>
+        </div>
+        <div class="navbar-right">
+            <a href="{{ url_for('point_earning_details') }}">Point Earning Details</a>
+            <a href="{{ url_for('fixtures') }}">Fixtures</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+
+        <h1>Point Earning Details</h1>
+
+        <!-- BATTER TABLE -->
+        <div class="panel">
+            <h2>Batting</h2>
+            <table>
+                <tr>
+                    <th></th>
+                    <th>Points</th>
+                </tr>
+                <tr><td>Run</td><td>+1</td></tr>
+                <tr><td>4</td><td>+1</td></tr>
+                <tr><td>6</td><td>+2</td></tr>
+                <tr><td>30+ score</td><td>+4</td></tr>
+                <tr><td>50+ score</td><td>+9</td></tr>
+                <tr><td>100+ score</td><td>+16</td></tr>
+                <tr><td>Strike rate >150 (minimum 6 balls)</td><td>+6</td></tr>
+            </table>
+        </div>
+
+        <!-- BOWLING TABLE -->
+        <div class="panel">
+            <h2>Bowling</h2>
+            <table>
+                <tr>
+                    <th></th>
+                    <th>Points</th>
+                </tr>
+                <tr><td>Wicket</td><td>+20</td></tr>
+                <tr><td>Maiden</td><td>+12</td></tr>
+                <tr><td>3 wicket haul</td><td>+4</td></tr>
+                <tr><td>4 wicket haul</td><td>+8</td></tr>
+                <tr><td>5+ wicket haul</td><td>+16</td></tr>
+                <tr><td>Bowled/LBW bonus</td><td>+5</td></tr>
+                <tr><td>Economy <5 (minimum 2 overs)</td><td>+6</td></tr>
+            </table>
+        </div>
+
+        <!-- FIELDING TABLE -->
+        <div class="panel">
+            <h2>Fielding</h2>
+            <table>
+                <tr>
+                    <th></th>
+                    <th>Points</th>
+                </tr>
+                <tr><td>Catch</td><td>+8</td></tr>
+                <tr><td>3+ catch bonus</td><td>+4</td></tr>
+                <tr><td>Stumping</td><td>+20</td></tr>
+                <tr><td>Runout</td><td>+8</td></tr>
+            </table>
+        </div>
+
+        <!-- MULTIPLIERS TABLE -->
+        <div class="panel">
+            <h2>Multipliers</h2>
+            <table>
+                <tr>
+                    <th></th>
+                    <th>Multiplier</th>
+                </tr>
+                <tr><td>1.1 player</td><td>x1.5</td></tr>
+                <tr><td>Division 4/Unstarred player</td><td>x2</td></tr>
+            </table>
+        </div>
+
+        <!-- BACK BUTTON -->
+        <div class="bottom">
+            <a href="{{ url_for('dashboard') }}" class="button">Back to Dashboard</a>
+        </div>
+
+    </div>
+
+</body>
+</html>

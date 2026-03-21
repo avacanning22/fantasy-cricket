@@ -1,4 +1,3 @@
-<!-- templates/login.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +5,7 @@
     <title>Login</title>
     <style>
         body {
-            background-color: #FFF9C4; /* baby yellow */
+            background-color: #FFF9C4;
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
@@ -24,14 +23,23 @@
             width: 350px;
         }
 
-        .logo {
-            width: 120px;
-            margin-bottom: 20px;
+        .top-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
         }
 
-        h2 {
+        .logo {
+            width: 120px;
+            margin: 10px 0;
+            margin-bottom:30px;
+        }
+
+        .sub-title {
+            font-size: 20px;
             margin-bottom: 20px;
-            color: #333;
+            color: #555;
+            font-weight: bold;
         }
 
         input[type="text"], input[type="password"] {
@@ -43,7 +51,7 @@
         }
 
         button {
-            background-color: #fbc02d; /* a darker yellow for the button */
+            background-color: #fbc02d;
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
@@ -70,10 +78,15 @@
 </head>
 <body>
     <div class="login-container">
-        <!-- Logo at the top center -->
+
+        <!-- TEXT ABOVE LOGO -->
+        <div class="top-title">LCC Women's Fantasy League</div>
+
+        <!-- LOGO -->
         <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
 
-        <h2>Login</h2>
+        <!-- TEXT BELOW LOGO -->
+        <div class="sub-title">Login</div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -90,6 +103,14 @@
         </form>
 
         <a href="{{ url_for('register') }}" class="register-link">Don't have an account? Register</a>
+
+        <p style="margin-top:15px; font-size:14px; color:#555; line-height:1.5;">
+            If you are having any problems logging in contact:<br>
+            <strong>Jenny Sparrow</strong><br>
+            0852275526<br>
+            jennyspar83@gmail.com
+        </p>
+
     </div>
 </body>
 </html>

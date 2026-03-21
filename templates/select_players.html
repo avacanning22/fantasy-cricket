@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Select Your Players - Fantasy Cricket</title>
+
+<style>
+    body {
+        background-color: #FFF9C4;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    .container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 40px 20px;
+        text-align: center;
+    }
+
+    h2 {
+        font-size: 40px;
+        font-weight: bold;
+        margin-bottom: 30px;
+        color: #333;
+    }
+
+    .player-container {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
+    /* COLUMN BOXES (ALL YELLOW) */
+    .player-column {
+        background-color: #FFD54F;
+        border-radius: 10px;
+        padding: 15px;
+        width: 200px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .player-column h3 {
+        margin-top: 0;
+        font-size: 22px;
+        color: #333;
+    }
+
+    .player-column ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* DEFAULT TILES (YELLOW) */
+    .player-column li {
+        padding: 8px 5px;
+        margin-bottom: 5px;
+        cursor: pointer;
+        border-radius: 6px;
+        background-color: #FFF59D;
+        transition: background-color 0.2s, transform 0.2s;
+    }
+
+    .player-column li:hover {
+        background-color: #FFE082;
+        transform: scale(1.05);
+    }
+
+    /* DIV 1.1 = GREEN */
+    .div1-1 {
+        background-color: #66BB6A !important;
+        color: #fff;
+    }
+
+    .div1-1:hover {
+        background-color: #43A047 !important;
+    }
+
+    /* DIV 4 = RED TILES ONLY */
+    .div4 {
+        background-color: #EF5350 !important;
+        color: #fff;
+    }
+
+    .div4:hover {
+        background-color: #E53935 !important;
+    }
+
+    /* SELECTED */
+    .selected {
+        background-color: #81D4FA !important;
+        font-weight: bold;
+    }
+
+    .wildcard-container {
+        margin-bottom: 30px;
+    }
+
+    select {
+        padding: 10px 15px;
+        font-size: 16px;
+        border-radius: 6px;
+        border: 1px solid #CCC;
+        background-color: #FFF59D;
+        cursor: pointer;
+    }
+
+    button {
+        padding: 15px 30px;
+        font-size: 18px;
+        font-weight: bold;
+        background-color: #FFD54F;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #FFC107;
+    }
+
+    footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 14px;
+        color: #555;
+    }
+</style>
+
+<script>
+function updateWildcardOptions() {
+    const selectedPlayers = [];
+    for (let i = 1; i <= 4; i++) {
+        const val = document.getElementById('p'+i).value;
+        if (val) selectedPlayers.push(val);
+    }
+
+    const wildcard = document.getElementById('pw');
+    for (let option of wildcard.options) {
+        option.disabled = selectedPlayers.includes(option.value);
+    }
+}
+
+function selectPlayer(slot, playerName, element) {
+    const input = document.getElementById(slot);
+
+    if (element.classList.contains('selected')) {
+        element.classList.remove('selected');
+        input.value = "";
+    } else {
+        const siblings = element.parentElement.querySelectorAll('li');
+        siblings.forEach(li => li.classList.remove('selected'));
+        element.classList.add('selected');
+        input.value = playerName;
+    }
+
+    updateWildcardOptions();
+}
+
+window.addEventListener('DOMContentLoaded', updateWildcardOptions);
+</script>
+</head>
+
+<body>
+<div class="container">
+    <h2>Select Your 5 Players</h2>
+
+    <form method="POST">
+        <div class="player-container">
+
+            {% for i in range(4) %}
+            <div class="player-column">
+                <h3>Div {{i + 1}}</h3>
+                <ul>
+                    {% for p in players_by_category[i] %}
+                    <li onclick="selectPlayer('p{{i+1}}', '{{p.Player}}', this)"
+                        class="
+                            {% if p.starrings == 1.1 %}div1-1{% endif %}
+                            {% if i == 3 %} div4{% endif %}
+                        ">
+                        {{p.Player}}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <input type="hidden" id="p{{i+1}}" name="p{{i+1}}">
+            </div>
+            {% endfor %}
+
+        </div>
+
+        <div class="wildcard-container">
+            <label for="pw"><strong>Wildcard</strong></label>
+            <br><br>
+            <select name="pw" id="pw">
+                <option value="">Select Player</option>
+                {% for p in players_by_category[4] %}
+                <option value="{{p.Player}}">{{p.Player}}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit">Submit Players</button>
+    </form>
+</div>
+
+<footer>
+    &copy; 2026 Fantasy Cricket League
+</footer>
+</body>
+</html>

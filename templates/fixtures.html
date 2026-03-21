@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fixtures - LCC Women's Fantasy League</title>
+    <style>
+        body {
+            background-color: #FFF9C4;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background-color: #800000; /* maroon */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            color: white;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-left img {
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        .navbar-left .title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .navbar-right a {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 8px 18px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #800000; /* maroon text on buttons */
+            background-color: #FFD54F; /* bright yellow */
+            border-radius: 6px;
+            text-decoration: none;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .navbar-right a:hover {
+            background-color: #FFC107;
+            color: #5A0000;
+        }
+
+        /* Container */
+        .container {
+            width: 95%;
+            margin: 20px auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 30px 0 20px 0; /* more padding around title */
+            font-size: 36px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+            table-layout: fixed; /* allows widths to apply */
+            background-color: white;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        th:first-child, td:first-child {
+            text-align: left;
+            width: 40%; /* first column wider */
+        }
+
+        th {
+            background-color: #FFD54F;
+            color: #333;
+        }
+
+        tr:hover {
+            background-color: #fff3cd;
+        }
+
+        .no-fixtures {
+            text-align: center;
+            font-weight: bold;
+            padding: 15px;
+        }
+
+        /* Column widths */
+        th:nth-child(1), td:nth-child(1) { width: 80px; text-align: center; }       /* Date */
+        th:nth-child(2), td:nth-child(2) { width: auto; text-align: left; }        /* Fixture - takes remaining space */
+        th:nth-child(3), td:nth-child(3) { width: 120px; }                          /* Venue */
+        th:nth-child(4), td:nth-child(4) { width: 80px; }  
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <div class="navbar-left">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+            <div class="title">LCC Women's Fantasy League</div>
+        </div>
+        <div class="navbar-right">
+            <a href="{{ url_for('point_earning_details') }}">Point Earning Details</a>
+            <a href="{{ url_for('fixtures') }}">Fixtures</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <h1>This Month's Fixtures</h1>
+
+        <table>
+            <tr>
+                <th>Date</th>
+                <th>Fixture</th>
+                <th>Venue</th>
+                <th>Start Time</th>
+            </tr>
+            {% if fixtures %}
+                {% for match in fixtures %}
+                    <tr>
+                        <td>{{ match['Date'] }}</td>
+                        <td>{{ match['Opponent'] }}</td>
+                        <td>{{ match['Venue'] }}</td>
+                        <td>{{ match['Start Time'] }}</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4" class="no-fixtures">No fixtures scheduled for this month.</td>
+                </tr>
+            {% endif %}
+        </table>
+    </div>
+
+</body>
+</html>

@@ -1,54 +1,205 @@
-<h1>Admin Dashboard</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
 
-<h2>All Users</h2>
-<table border="1">
-  <tr>
-    {% for col in users[0].keys() %}
-    <th>{{ col }}</th>
-    {% endfor %}
-  </tr>
-  {% for user in users %}
-  <tr>
-    {% for val in user.values() %}
-    <td>{{ val }}</td>
-    {% endfor %}
-  </tr>
-  {% endfor %}
-</table>
+    <style>
+        body {
+            background-color: #FFF9C4;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
 
-<h2>All Picks</h2>
-<table border="1">
-  <tr>
-    {% for col in picks[0].keys() %}
-    <th>{{ col }}</th>
-    {% endfor %}
-  </tr>
-  {% for pick in picks %}
-  <tr>
-    {% for val in pick.values() %}
-    <td>{{ val }}</td>
-    {% endfor %}
-  </tr>
-  {% endfor %}
-</table>
+        .container {
+            width: 90%;
+            margin: auto;
+            text-align: center;
+        }
 
-<h2>Competition Control</h2>
-{% if current_round %}
-<p>Current Round: <b>{{ current_round }}</b></p>
-<form method="POST">
-  <button type="submit" name="action" value="close_round">Close Current Round</button>
-</form>
-{% else %}
-<p>No active round</p>
-{% endif %}
-<form method="POST">
-  <button type="submit" name="action" value="open_round">Open Next Round</button>
-</form>
+        h1 {
+            margin-top: 20px;
+            font-size: 40px;
+            color: #333;
+        }
 
-<h2>Upload Picks / Starrings</h2>
-<form method="POST" enctype="multipart/form-data">
-  <input type="file" name="upload_file">
-  <button type="submit">Upload</button>
-</form>
+        .section {
+            margin-top: 40px;
+        }
 
-<a href="{{ url_for('logout') }}">Logout</a>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #FFD54F;
+            color: #333;
+        }
+
+        tr:hover {
+            background-color: #fff3cd;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            background-color: #FFD54F;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .button:hover {
+            background-color: #FFC107;
+        }
+
+        .danger {
+            background-color: #ef5350;
+            color: white;
+        }
+
+        .danger:hover {
+            background-color: #d32f2f;
+        }
+
+        .info-box {
+            font-size: 20px;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .flash {
+            padding: 10px;
+            margin: 10px auto;
+            width: 60%;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .flash.success { background: #c8e6c9; }
+        .flash.danger { background: #ffcdd2; }
+        .flash.warning { background: #fff3cd; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Admin Dashboard</h1>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="info-box">
+        Current Round: {{ current_round or "None" }}
+    </div>
+
+    <!-- Competition Controls -->
+    <div class="section">
+        <h2>Competition Control</h2>
+
+        {% if current_round %}
+            <div class="info-box">
+                Current Open Selection: {{ current_round }}
+            </div>
+
+            <form method="POST">
+                <button class="button danger" name="action" value="close_round">
+                    Close Current Selection
+                </button>
+            </form>
+
+        {% else %}
+            <div class="info-box">
+                No active selection round.
+            </div>
+
+            <form method="POST">
+                <button class="button" name="action" value="open_round">
+                    Open Next Selection
+                </button>
+            </form>
+        {% endif %}
+    </div>
+
+    <!-- Upload Section -->
+    <div class="section">
+        <h2>Upload Picks / Starrings</h2>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="upload_file">
+            <br>
+            <button class="button" type="submit">Upload File</button>
+        </form>
+    </div>
+
+    <!-- Users Table -->
+    <div class="section">
+        <h2>Users</h2>
+        <table>
+            <tr>
+                {% for col in users[0].keys() %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+
+            {% for user in users %}
+            <tr>
+                {% for val in user.values() %}
+                    <td>{{ val }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- Picks Table -->
+    <div class="section">
+        <h2>Picks</h2>
+        <table>
+            <tr>
+                {% for col in picks[0].keys() %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+
+            {% for pick in picks %}
+            <tr>
+                {% for val in pick.values() %}
+                    <td>{{ val }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <br>
+
+    <a href="{{ url_for('admin_logout') }}" class="button">Logout</a>
+
+</div>
+
+</body>
+</html>
