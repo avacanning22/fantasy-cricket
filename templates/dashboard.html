@@ -1,25 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <title>Dashboard</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             background-color: #FFF9C4;
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             margin: 0;
             padding: 0;
+            color: #333;
         }
 
         /* -------- NAVBAR -------- */
         .navbar {
-            background-color: #800000; /* maroon */
+            background-color: #800000;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 20px;
+            padding: 12px 24px;
             color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
         }
 
         .navbar-left {
@@ -28,105 +35,109 @@
         }
 
         .navbar-left img {
-            height: 50px;
-            margin-right: 15px;
+            height: 52px;
+            margin-right: 14px;
         }
 
         .navbar-left .title {
             font-size: 22px;
-            font-weight: bold;
+            font-weight: 700;
         }
 
         .navbar-right a {
             display: inline-block;
             margin-left: 10px;
-            padding: 8px 18px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #800000; /* maroon text on buttons */
-            background-color: #FFD54F; /* bright yellow */
-            border-radius: 6px;
+            padding: 9px 18px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #800000;
+            background-color: #FFD54F;
+            border-radius: 8px;
             text-decoration: none;
-            transition: background-color 0.3s, color 0.3s;
+            transition: background-color 0.2s, transform 0.15s;
         }
 
         .navbar-right a:hover {
             background-color: #FFC107;
-            color: #5A0000;
+            transform: translateY(-1px);
         }
 
-        /* -------- CONTAINER -------- */
+        /* -------- PAGE -------- */
         .container {
             width: 95%;
-            margin: 20px auto;
+            max-width: 1200px;
+            margin: 30px auto;
         }
 
         h1 {
             text-align: center;
-            margin-top: 40px;
-            font-size: 40px;
-            color: #333;
+            font-size: 42px;
+            margin-bottom: 10px;
+            font-weight: 800;
         }
 
         .round-info {
             text-align: center;
-            font-size: 18px;
-            margin-top: 10px;
+            font-size: 16px;
             margin-bottom: 30px;
-            font-weight: bold;
-            color: #555;
+            font-weight: 600;
+            color: #666;
         }
 
+        /* -------- FLASH -------- */
         .flash {
-            padding: 10px;
+            padding: 12px;
             margin: 10px auto;
             width: 60%;
-            border-radius: 5px;
-            font-weight: bold;
+            border-radius: 8px;
+            font-weight: 600;
             text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
-        .flash.success { background: #c8e6c9; }
-        .flash.danger { background: #ffcdd2; }
-        .flash.warning { background: #fff3cd; }
+        .flash.success { background: #E7F6E9; color: #256029; }
+        .flash.danger  { background: #FDE7E9; color: #C63737; }
+        .flash.warning { background: #FFF3CD; color: #856404; }
+        .flash.info    { background: #E3F0FF; color: #0D47A1; }
 
         /* -------- BIG BOXES -------- */
         .big-box {
             background: white;
-            border-radius: 10px;
-            padding: 20px;
+            border-radius: 14px;
+            padding: 22px;
             margin-bottom: 30px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
         }
 
         .big-box h2 {
-            text-align: left;
-            font-size: 28px;
-            margin-bottom: 20px;
-            color: #333;
-            border-bottom: 2px solid #FFD54F;
-            padding-bottom: 5px;
+            font-size: 26px;
+            margin-bottom: 18px;
+            border-bottom: 3px solid #FFD54F;
+            padding-bottom: 6px;
+            font-weight: 800;
         }
 
         .main {
             display: flex;
-            margin-top: 20px;
             gap: 20px;
         }
 
         .panel {
             flex: 1;
-            background: #fff8dc;
-            border-radius: 10px;
-            padding: 15px;
+            background: #FFFDF1;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #F1E6A8;
         }
 
-        h2.panel-title {
+        .panel-title {
             text-align: center;
+            font-size: 20px;
             margin-bottom: 10px;
-            font-size: 22px;
-            color: #333;
+            font-weight: 700;
         }
 
+        /* -------- TABLE -------- */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -134,194 +145,176 @@
 
         th, td {
             padding: 10px;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #E5E5E5;
             text-align: center;
+            font-size: 14px;
         }
 
         th {
             background-color: #FFD54F;
-            color: #333;
+            font-weight: 700;
         }
 
         tr:hover {
-            background-color: #fff3cd;
+            background-color: #FFF7DB;
         }
 
         .score-box {
             margin-top: 15px;
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 18px;
+            font-weight: 700;
             text-align: center;
-            color: #333;
-        }
-
-
-
-        /* Flash messages */
-        .flash {
-            padding: 12px 20px;
-            margin: 15px auto;
-            width: 60%;
+            background: #FFF4C2;
+            padding: 10px;
             border-radius: 8px;
-            font-weight: bold;
-            text-align: center;
-            color: #333;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-            font-size: 1rem;
         }
 
-        .flash.success { background: #c8e6c9; color: #256029; } /* green */
-        .flash.danger { background: #ffcdd2; color: #c63737; }  /* red */
-        .flash.warning { background: #fff3cd; color: #856404; } /* yellow */
-        .flash.info { background: #bbdefb; color: #0d47a1; }    /* blue */
+        /* -------- BOTTOM -------- */
+        .bottom {
+            display: flex;
+            gap: 20px;
+        }
+
+        .total-score {
+            background: #FFD54F;
+            font-size: 48px;
+            font-weight: 800;
+            padding: 25px;
+            border-radius: 14px;
+            text-align: center;
+        }
+
+        .total-score span {
+            display: block;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 900px) {
+            .main, .bottom {
+                flex-direction: column;
+            }
+
+            .flash {
+                width: 90%;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- NAVBAR -->
-    <div class="navbar">
-        <div class="navbar-left">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
-            <div class="title">LCC Women's Fantasy League</div>
-        </div>
-        <div class="navbar-right">
-            <a href="{{ url_for('point_earning_details') }}">Point Earning Details</a>
-            <a href="{{ url_for('fixtures') }}">Fixtures</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
-        </div>
+<div class="navbar">
+    <div class="navbar-left">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+        <div class="title">LCC Women's Fantasy League</div>
     </div>
+    <div class="navbar-right">
+        <a href="{{ url_for('point_earning_details') }}">Point Earning Details</a>
+        <a href="{{ url_for('fixtures') }}">Fixtures</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</div>
 
-    <div class="container">
+<div class="container">
 
-        <h1>Welcome, {{ session['name'] }}!</h1>
-        <div class="round-info">Current Round: {{ round_name }}</div>
+    <h1>Welcome, {{ session['name'] }}!</h1>
+    <div class="round-info">Current Round: {{ round_name }}</div>
 
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% for category, message in messages %}
-                <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
 
-        <!-- -------- THIS MONTH BOX -------- -->
-        <div class="big-box">
-            <h2>This Month</h2>
+    <!-- THIS MONTH -->
+    <div class="big-box">
+        <h2>This Month</h2>
 
-            <div class="main">
+        <div class="main">
 
-                <!-- PLAYER LEADERBOARD -->
-                <div class="panel">
-                    <h2 class="panel-title">Most Valuable Players this Month</h2>
-                    <table>
-                        <tr><th>Player</th><th>Points</th></tr>
-                        {% if player_leaderboard %}
-                            {% for p in player_leaderboard %}
-                                <tr>
-                                    <td>{{ p['Player'] }}</td>
-                                    <td>{{ p['Points']|clean_float }}</td>
-                                </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr><td colspan="2">No data</td></tr>
-                        {% endif %}
-                    </table>
-                </div>
-
-                <!-- PARTICIPANT LEADERBOARD -->
-                <div class="panel">
-                    <h2 class="panel-title">Fantasy Leaderboard</h2>
-                    <table>
-                        <tr><th>Drafter</th><th>Points</th></tr>
-                        {% if user_leaderboard %}
-                            {% for u in user_leaderboard %}
-                                <tr>
-                                    <td>@{{ u['Participant'] }}</td>
-                                    <td>{{ u['Points']|clean_float }}</td>
-                                </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr><td colspan="2">No data</td></tr>
-                        {% endif %}
-                    </table>
-                </div>
-
-                <!-- USER PICKS -->
-                <div class="panel">
-                    <h2 class="panel-title">Your Team for this Month</h2> 
-
-                    {% if missed_round %}
-                        <div class="flash info">
-                            You missed the selection window. A random team was assigned for {{ round_name }}.
-                        </div>
-                    {% endif %}
-
-                    {% if user_picks %}
-                        <table>
-                            <tr><th>Player</th><th>Score</th></tr>
-                            {% for p in user_picks %}
-                                <tr>
-                                    <td>{{ p }}</td>
-                                    <td>{{ player_scores.get(p, 0)|clean_float }}</td>
-                                </tr>
-                            {% endfor %}
-                        </table>
-                    {% else %}
-                        <p style="text-align:center;">No team selected yet.</p>
-                    {% endif %}
-                    <div class="score-box">
-                        Total Score: {{ user_score|clean_float }}
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- -------- YOUR SCORE BOX -------- -->
-        <div class="big-box" style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <!-- Left: Monthly breakdown -->
-            <div style="flex: 2;">
-                <h2>Your Teams</h2>
-                {% if monthly_scores %}
-                    {% for month_data in monthly_scores %}
-                        <div style="margin-bottom: 20px; border-bottom: 1px dashed #FFD54F; padding-bottom: 10px;">
-                            <h3>{{ month_data.Month 
-                                        |replace('0','') 
-                                        |replace('1','') 
-                                        |replace('2','') 
-                                        |replace('3','') 
-                                        |replace('4','') 
-                                        |replace('5','') 
-                                        |replace('6','') 
-                                        |replace('7','') 
-                                        |replace('8','') 
-                                        |replace('9','') 
-                                }} Score: {{ month_data['Fantasy Score']|clean_float }}</h3>
-                            <table style="margin-top: 10px;">
-                                <tr><th>Player</th><th>Score</th></tr>
-                                {% for player, score in month_data['Breakdown'].items() %}
-                                <tr>
-                                    <td>{{ player }}</td>
-                                    <td>{{ score|clean_float }}</td>
-                                </tr>
-                                {% endfor %}
-                            </table>
-                        </div>
+            <div class="panel">
+                <div class="panel-title">Top Players</div>
+                <table>
+                    <tr><th>Player</th><th>Points</th></tr>
+                    {% for p in player_leaderboard %}
+                    <tr>
+                        <td>{{ p['Player'] }}</td>
+                        <td>{{ p['Points']|clean_float }}</td>
+                    </tr>
                     {% endfor %}
-                {% else %}
-                    <p style="text-align:center; color:#555;">No past month data available.</p>
-                {% endif %}
+                </table>
             </div>
 
-            <!-- Right: Total score -->
-            <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
-                <div style="background-color: #FFD54F; color: #333; font-size: 50px; font-weight: bold; border-radius: 10px; padding: 20px; text-align: center;">
-                    {{ user_score|clean_float }}
-                    <div style="font-size: 18px; font-weight: normal;">Total</div>
+            <div class="panel">
+                <div class="panel-title">Leaderboard</div>
+                <table>
+                    <tr><th>User</th><th>Points</th></tr>
+                    {% for u in user_leaderboard %}
+                    <tr>
+                        <td>@{{ u['Participant'] }}</td>
+                        <td>{{ u['Points']|clean_float }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Your Team</div>
+
+                {% if user_picks %}
+                <table>
+                    <tr><th>Player</th><th>Score</th></tr>
+                    {% for p in user_picks %}
+                    <tr>
+                        <td>{{ p }}</td>
+                        <td>{{ player_scores.get(p, 0)|clean_float }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p style="text-align:center;">No team selected</p>
+                {% endif %}
+
+                <div class="score-box">
+                    Total: {{ user_score|clean_float }}
                 </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="big-box bottom">
+
+        <div style="flex:2;">
+            <h2>Your Teams</h2>
+
+            {% for month_data in monthly_scores %}
+            <div style="margin-bottom:15px;">
+                <strong>{{ month_data.Month }} Score: {{ month_data['Fantasy Score']|clean_float }}</strong>
+                <table>
+                    <tr><th>Player</th><th>Score</th></tr>
+                    {% for player, score in month_data['Breakdown'].items() %}
+                    <tr>
+                        <td>{{ player }}</td>
+                        <td>{{ score|clean_float }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+            <div class="total-score">
+                {{ user_score|clean_float }}
+                <span>Total</span>
             </div>
         </div>
 
     </div>
+
+</div>
 
 </body>
 </html>
