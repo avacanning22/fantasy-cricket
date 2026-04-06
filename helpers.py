@@ -3,6 +3,8 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from points import calculate_fantasy_score  # keep your scoring logic
+import random
+
 
 
 # ---------- File Paths ----------
@@ -334,4 +336,72 @@ def calculate_all_player_scores(period_name):
     print(f"[INFO] Scores updated for round: {period_name}")
 
 
+
+def generate_random_team(df, slot_rules, existing_teams):
+    """
+    df: DataFrame of all players with 'Player' and 'starrings' columns
+    slot_rules: dict mapping slot index to starrings filter (or 'any')
+    existing_teams: list of sets representing all teams already submitted
+    """
+    max_attempts = 100
+    players_list = df["Player"].tolist()
+
+    for attempt in range(max_attempts):
+        team = []
+        for i in range(5):
+            rule = slot_rules[i]
+            if rule == "any":
+                eligible_players = players_list
+            else:
+                eligible_players = df[df["starrings"].isin(rule)]["Player"].tolist()
+            
+            # Exclude already selected players in this team
+            available_players = [p for p in eligible_players if p not in team]
+            team.append(random.choice(available_players))
+
+        # Check for duplicates
+        if set(team) not in existing_teams:
+            return team
     
+    raise ValueError("Unable to generate a unique random team after multiple attempts")
+
+
+def get_all_rounds_for_user(username):
+    """
+    Returns a list of all past rounds (excluding 'latest') a user has picks for.
+    Sorted chronologically by month.
+    """
+    picks_df = load_picks()
+
+    if username not in picks_df["username"].values:
+        return []
+
+    user_row = picks_df[picks_df["username"] == username].iloc[0]
+
+    # Define months in order
+    months_order = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+
+    # All columns except 'username'
+    cols = [c for c in picks_df.columns if c != "username"]
+
+    # Collect rounds with valid picks
+    rounds = set()
+    for c in cols:
+        if c.startswith("latest"):
+            continue  # skip latest columns
+        if c.endswith(("p1","p2","p3","p4","pw")):
+            round_name = c[:-2]
+            val = user_row.get(c)
+            if val not in [None, "", "X"]:
+                rounds.add(round_name)
+
+    # Sort rounds by month order then year
+    def sort_key(r):
+        # Extract month name and year
+        match = pd.Series(r).str.extract(r'([A-Za-z]+)(\d{4})')
+        month_name, year = match.iloc[0,0], int(match.iloc[0,1])
+        month_index = months_order.index(month_name) if month_name in months_order else 0
+        return (year, month_index)
+
+    sorted_rounds = sorted(rounds, key=sort_key)
+    return sorted_rounds

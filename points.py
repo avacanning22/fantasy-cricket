@@ -133,6 +133,9 @@ def calculate_fantasy_score(
         fantasy_score *= 2
         multiplier_applied = True
 
+    if float(starring_level) == 1.1:
+        fantasy_score *= 1.5
+        multiplier_applied = True
     # -----------------------------
     # Breakdown dictionary
     # -----------------------------

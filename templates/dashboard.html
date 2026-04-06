@@ -154,6 +154,26 @@
             text-align: center;
             color: #333;
         }
+
+
+
+        /* Flash messages */
+        .flash {
+            padding: 12px 20px;
+            margin: 15px auto;
+            width: 60%;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            color: #333;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            font-size: 1rem;
+        }
+
+        .flash.success { background: #c8e6c9; color: #256029; } /* green */
+        .flash.danger { background: #ffcdd2; color: #c63737; }  /* red */
+        .flash.warning { background: #fff3cd; color: #856404; } /* yellow */
+        .flash.info { background: #bbdefb; color: #0d47a1; }    /* blue */
     </style>
 </head>
 <body>
@@ -191,7 +211,7 @@
 
                 <!-- PLAYER LEADERBOARD -->
                 <div class="panel">
-                    <h2 class="panel-title">Player Leaderboard</h2>
+                    <h2 class="panel-title">Most Valuable Players this Month</h2>
                     <table>
                         <tr><th>Player</th><th>Points</th></tr>
                         {% if player_leaderboard %}
@@ -209,13 +229,13 @@
 
                 <!-- PARTICIPANT LEADERBOARD -->
                 <div class="panel">
-                    <h2 class="panel-title">Participant Leaderboard</h2>
+                    <h2 class="panel-title">Fantasy Leaderboard</h2>
                     <table>
-                        <tr><th>Participant</th><th>Points</th></tr>
+                        <tr><th>Drafter</th><th>Points</th></tr>
                         {% if user_leaderboard %}
                             {% for u in user_leaderboard %}
                                 <tr>
-                                    <td>{{ u['Participant'] }}</td>
+                                    <td>@{{ u['Participant'] }}</td>
                                     <td>{{ u['Points']|clean_float }}</td>
                                 </tr>
                             {% endfor %}
@@ -227,7 +247,14 @@
 
                 <!-- USER PICKS -->
                 <div class="panel">
-                    <h2 class="panel-title">Your Team for this Month</h2>
+                    <h2 class="panel-title">Your Team for this Month</h2> 
+
+                    {% if missed_round %}
+                        <div class="flash info">
+                            You missed the selection window. A random team was assigned for {{ round_name }}.
+                        </div>
+                    {% endif %}
+
                     {% if user_picks %}
                         <table>
                             <tr><th>Player</th><th>Score</th></tr>
@@ -250,9 +277,48 @@
         </div>
 
         <!-- -------- YOUR SCORE BOX -------- -->
-        <div class="big-box">
-            <h2>Your Score</h2>
-            <p style="text-align:center; color:#555;">Your score details will appear here.</p>
+        <div class="big-box" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <!-- Left: Monthly breakdown -->
+            <div style="flex: 2;">
+                <h2>Your Teams</h2>
+                {% if monthly_scores %}
+                    {% for month_data in monthly_scores %}
+                        <div style="margin-bottom: 20px; border-bottom: 1px dashed #FFD54F; padding-bottom: 10px;">
+                            <h3>{{ month_data.Month 
+                                        |replace('0','') 
+                                        |replace('1','') 
+                                        |replace('2','') 
+                                        |replace('3','') 
+                                        |replace('4','') 
+                                        |replace('5','') 
+                                        |replace('6','') 
+                                        |replace('7','') 
+                                        |replace('8','') 
+                                        |replace('9','') 
+                                }} Score: {{ month_data['Fantasy Score']|clean_float }}</h3>
+                            <table style="margin-top: 10px;">
+                                <tr><th>Player</th><th>Score</th></tr>
+                                {% for player, score in month_data['Breakdown'].items() %}
+                                <tr>
+                                    <td>{{ player }}</td>
+                                    <td>{{ score|clean_float }}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align:center; color:#555;">No past month data available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Right: Total score -->
+            <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+                <div style="background-color: #FFD54F; color: #333; font-size: 50px; font-weight: bold; border-radius: 10px; padding: 20px; text-align: center;">
+                    {{ user_score|clean_float }}
+                    <div style="font-size: 18px; font-weight: normal;">Total</div>
+                </div>
+            </div>
         </div>
 
     </div>

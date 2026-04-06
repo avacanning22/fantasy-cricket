@@ -16,7 +16,8 @@ from helpers import (
     get_active_round, set_active_round,
     get_last_round, set_last_round,
     update_team_score, team_already_exists,
-    calculate_all_player_scores, read_fixtures
+    calculate_all_player_scores, read_fixtures,
+    generate_random_team, get_all_rounds_for_user
 )
 
 app = Flask(__name__)
@@ -46,8 +47,8 @@ def clean_float(value):
 
 @app.route("/")
 def index():
-    if "username" in session:
-        return redirect(url_for("dashboard"))
+    # if "username" in session:
+    #     return redirect(url_for("dashboard"))
     return render_template("index.html")
 
 
@@ -101,7 +102,6 @@ def login():
     return render_template("login.html")
 
 
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -117,11 +117,24 @@ def register():
             if username in users_df["username"].values:
                 flash("Username already exists", "danger")
             else:
+                # Save the user to users.xlsx
                 save_user(name, username, phone, password)
+                
+                # --- Add username to picks.xlsx ---
+                picks_df = load_picks()
+                if username not in picks_df["username"].values:
+                    # Create a new row with username and empty columns
+                    new_row = {col: None for col in picks_df.columns}
+                    new_row["username"] = username
+                    picks_df = pd.concat([picks_df, pd.DataFrame([new_row])], ignore_index=True)
+                    save_picks(picks_df)
+
                 flash("Registration successful!", "success")
                 return redirect(url_for("login"))
 
     return render_template("register.html")
+
+
 
 @app.route("/dashboard")
 def dashboard():
@@ -129,54 +142,142 @@ def dashboard():
         return redirect(url_for("login"))
 
     username = session["username"]
-    round_name = get_active_round()
 
     picks_df = load_picks()
-    user_row = picks_df[picks_df["username"] == username]
-    round_cols = [f"{round_name}p{i}" for i in [1, 2, 3, 4]] + [f"{round_name}pw"] if round_name else []
+    players_df = load_players()
 
-    # Check if user has submitted picks for the active round
-    user_has_submitted = (
-        not user_row.empty and
-        all(pd.notna(user_row.iloc[0].get(c)) and user_row.iloc[0].get(c) not in ["", None] for c in round_cols)
-    )
+    user_row_df = picks_df[picks_df["username"] == username]
+    user_row = user_row_df.iloc[0] if not user_row_df.empty else None
 
-    # If there is an active round and user has NOT submitted → redirect to select_players
-    if round_name and not user_has_submitted:
-        return redirect(url_for("select_players"))
+    active_round = get_active_round()
+    last_round = get_last_round()
+
+    # ---------------- DETERMINE ROUND ---------------- #
+    if active_round:
+        round_name = active_round
+    else:
+        round_name = last_round
+
+    # ---------------- CHECK SUBMISSION (ONLY ACTIVE ROUND) ---------------- #
+    if active_round:
+        round_cols = [f"{active_round}p{i}" for i in [1,2,3,4]] + [f"{active_round}pw"]
+
+        user_has_submitted = (
+            user_row is not None and
+            all(pd.notna(user_row.get(c)) and user_row.get(c) not in ["", None] for c in round_cols)
+        )
+
+        if not user_has_submitted:
+            return redirect(url_for("select_players"))
+
+    # ---------------- USER PICKS LOGIC ---------------- #
+    latest_cols = ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
+    user_picks = []
+
+    if active_round:
+        # NORMAL ACTIVE ROUND PICKS
+        if user_row is not None:
+            round_cols = [f"{active_round}p{i}" for i in [1,2,3,4]] + [f"{active_round}pw"]
+            user_picks = [user_row.get(c) for c in round_cols]
+
+    else:
+        # ---------------- CLOSED ROUND LOGIC ---------------- #
+        if not active_round:  # round is closed
+            latest_cols = ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
+
+            if user_row is not None:
+                latest_team = [user_row.get(c, None) for c in latest_cols]
+
+                # User missed the round → assign random team
+                if any(p == "X" for p in latest_team):
+                    last_round = get_last_round()
+                    if not last_round:
+                        flash("No last round found to assign random team.", "danger")
+                        user_picks = [None]*5
+                    else:
+                        # Columns for last round
+                        round_cols = [f"{last_round}p{i}" for i in [1,2,3,4]] + [f"{last_round}pw"]
+
+                        # Build existing teams from last round
+                        existing_teams = []
+                        for _, row in picks_df.iterrows():
+                            team = set([
+                                row.get(c) for c in round_cols
+                                if pd.notna(row.get(c)) and row.get(c) not in [None, ""]
+                            ])
+                            if team:
+                                existing_teams.append(team)
+
+                        # Generate random team
+                        random_team = generate_random_team(players_df, slot_rules, existing_teams)
+
+                        # Write random team to last round columns
+                        for i, col in enumerate(round_cols):
+                            picks_df.loc[picks_df["username"] == username, col] = random_team[i]
+
+                        # Update latest picks as well
+                        for i, col in enumerate(latest_cols):
+                            picks_df.loc[picks_df["username"] == username, col] = random_team[i]
+
+                        save_picks(picks_df)
+
+                        # --- UPDATE SCORE AND RELOAD PICKS ---
+                        update_team_score(username, last_round)       # updates the score
+                        picks_df = load_picks()                        # reload picks with updated score
+                        user_row = picks_df[picks_df["username"] == username].iloc[0]  # update user_row
+                        user_picks = [user_row.get(c) for c in round_cols]             # use actual last round picks
+                        missed_round = True
+
+                        # Notify user they were assigned a random team
+                        flash(
+                            f"You were assigned a random team for {last_round} because the selection window has closed.",
+                            "info"
+                        )
+                else:
+                    # User submitted team → just show it
+                    user_picks = latest_team
+            else:
+                flash("You did not submit a team in the last round.", "warning")
+                user_picks = [None]*5
 
     # ---------------- PLAYER LEADERBOARD ---------------- #
     try:
-        players_df = load_players()
-        player_score_col = f"{round_name}_score" if round_name else "Round1_score"
+        player_score_col = f"{round_name}_score" if round_name else None
 
-        if player_score_col in players_df.columns:
+        if player_score_col and player_score_col in players_df.columns:
             players_df[player_score_col] = pd.to_numeric(
                 players_df[player_score_col], errors="coerce"
             ).fillna(0)
 
             top_players = players_df.sort_values(player_score_col, ascending=False).head(10)
+
             player_leaderboard = top_players[["Player", player_score_col]] \
-                .rename(columns={player_score_col: "Points"}).to_dict(orient="records")
+                .rename(columns={player_score_col: "Points"}) \
+                .to_dict(orient="records")
         else:
             player_leaderboard = []
     except Exception as e:
         print("Player leaderboard error:", e)
         player_leaderboard = []
 
-    # ---------------- PARTICIPANT (USER) LEADERBOARD ---------------- #
+    # ---------------- USER LEADERBOARD ---------------- #
     try:
-        user_score_col = f"{round_name}_score" if round_name else "Round1_score"
+        user_score_col = f"{round_name}_score" if round_name else None
 
-        if user_score_col in picks_df.columns:
-            picks_df[user_score_col] = pd.to_numeric(picks_df[user_score_col], errors="coerce").fillna(0)
-            user_leaderboard_df = picks_df[["username", user_score_col]].sort_values(
-                user_score_col, ascending=False
-            ).head(10)
+        if user_score_col and user_score_col in picks_df.columns:
+            picks_df[user_score_col] = pd.to_numeric(
+                picks_df[user_score_col], errors="coerce"
+            ).fillna(0)
+
+            user_leaderboard_df = picks_df[["username", user_score_col]] \
+                .sort_values(user_score_col, ascending=False) \
+                .head(5)
+
             user_leaderboard_df.rename(
                 columns={"username": "Participant", user_score_col: "Points"},
                 inplace=True
             )
+
             user_leaderboard = user_leaderboard_df.to_dict(orient="records")
         else:
             user_leaderboard = []
@@ -184,24 +285,21 @@ def dashboard():
         print("User leaderboard error:", e)
         user_leaderboard = []
 
-
-
-    # ---------------- USER PICKS ---------------- #
-    if not user_row.empty:
-        user_row = user_row.iloc[0]
-        user_picks = [user_row.get(c) for c in round_cols]
-    else:
-        user_picks = []
-
     # ---------------- PLAYER SCORES ---------------- #
-    player_scores = {}  # ALWAYS initialize
+    player_scores = {}
 
     if user_picks and round_name:
         try:
+            player_score_col = f"{round_name}_score"
+
             if player_score_col in players_df.columns:
                 for player in user_picks:
-                    score_series = players_df.loc[players_df["Player"] == player, player_score_col]
-                    player_scores[player] = score_series.iloc[0] if not score_series.empty else 0
+                    score_series = players_df.loc[
+                        players_df["Player"] == player, player_score_col
+                    ]
+                    player_scores[player] = (
+                        score_series.iloc[0] if not score_series.empty else 0
+                    )
             else:
                 for player in user_picks:
                     player_scores[player] = 0
@@ -209,9 +307,6 @@ def dashboard():
             print("Error calculating player scores:", e)
             for player in user_picks:
                 player_scores[player] = 0
-    else:
-        # If no picks yet, make it empty dict
-        player_scores = {}
 
     # ---------------- USER SCORE ---------------- #
     try:
@@ -219,7 +314,32 @@ def dashboard():
     except:
         user_score = 0
 
-    # ---------------- RENDER DASHBOARD ---------------- #
+    missed_round = False
+
+    if not active_round and user_row is not None:
+        latest_team = [user_row.get(c) for c in ["latestp1","latestp2","latestp3","latestp4","latestpw"]]
+        if any(p == "X" for p in latest_team):
+            missed_round = True
+
+    # Example inside your dashboard() route
+    monthly_scores = []
+
+    if user_picks:
+        # Suppose you store monthly breakdown somewhere for the user, e.g., in picks_df
+        last_rounds = get_all_rounds_for_user(username)  # custom helper to get all past rounds
+        for r in last_rounds:
+            # Get the 5 players for that round
+            round_cols = [f"{r}p{i}" for i in range(1,5)] + [f"{r}pw"]
+            players = [user_row.get(c) for c in round_cols]
+            # Get player scores
+            breakdown = {p: player_scores.get(p, 0) for p in players}
+            score = sum(breakdown.values())
+            monthly_scores.append({
+                "Month": r,
+                "Fantasy Score": score,
+                "Breakdown": breakdown
+            })
+
     return render_template(
         "dashboard.html",
         username=username,
@@ -228,10 +348,13 @@ def dashboard():
         user_leaderboard=user_leaderboard,
         user_picks=user_picks,
         user_score=user_score,
-        player_scores=player_scores  # new
+        player_scores=player_scores,
+        missed_round=missed_round,
+        monthly_scores=monthly_scores  # <-- pass this!
     )
 
-# ---------- Admin Dashboard ----------
+
+
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin_dashboard():
@@ -244,18 +367,16 @@ def admin_dashboard():
     current_round = get_active_round()
     months = ["May", "June", "July", "August"]
 
-    # ------------------ HANDLE POST ACTIONS ------------------ #
     if request.method == "POST":
         action = request.form.get("action")
 
-        # -------- CLOSE ROUND -------- #
         if action == "close_round":
             if current_round:
-                latest_cols = ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
-                round_cols = [f"{current_round}p{i}" for i in range(1, 5)] + [f"{current_round}pw"]
+                latest_cols = ["latestp1","latestp2","latestp3","latestp4","latestpw"]
+                round_cols = [f"{current_round}p{i}" for i in range(1,5)] + [f"{current_round}pw"]
 
                 for idx, row in picks_df.iterrows():
-                    if all(pd.notna(row.get(c)) for c in round_cols):
+                    if all(pd.notna(row.get(c)) and row.get(c) not in ["", None] for c in round_cols):
                         for rcol, lcol in zip(round_cols, latest_cols):
                             picks_df.at[idx, lcol] = row[rcol]
                     else:
@@ -264,73 +385,83 @@ def admin_dashboard():
 
                 save_picks(picks_df)
                 set_last_round(current_round)
-                set_active_round("")  # close round
-
+                set_active_round("")
                 flash(f"Round '{current_round}' closed and latest picks updated!", "success")
             else:
                 flash("No active selection round.", "warning")
-
             return redirect(url_for("admin_dashboard"))
 
-        # -------- OPEN ROUND -------- #
         elif action == "open_round":
             last_round = get_last_round()
-
+            current_month_index = -1
             if last_round:
                 match = re.match(r"([A-Za-z]+)", last_round)
                 last_month_name = match.group(1).capitalize() if match else None
-
-                try:
+                if last_month_name in months:
                     current_month_index = months.index(last_month_name)
-                except ValueError:
-                    current_month_index = -1
-            else:
-                current_month_index = -1
 
             next_index = (current_month_index + 1) % len(months)
-            next_month = months[next_index]
-            next_round_name = f"{next_month}2025"
+            next_round_name = f"{months[next_index]}2025"
 
-            # Calculate scores
-    
-            calculate_all_player_scores(next_round_name)
+            # ------------------ PROCESS LAST ROUND ------------------
+            if last_round:
+                picks_df = load_picks()
+                players_df = load_players()
+                latest_cols = ["latestp1","latestp2","latestp3","latestp4","latestpw"]
+                round_cols = [f"{last_round}p{i}" for i in range(1,5)] + [f"{last_round}pw"]
+                round_score_col = f"{last_round}_score"
+                if round_score_col not in picks_df.columns:
+                    picks_df[round_score_col] = 0
 
-            # Initialize columns
-            round_cols = [f"{next_round_name}p{i}" for i in range(1, 5)] + [f"{next_round_name}pw"]
+                for idx, row in picks_df.iterrows():
+                    latest_team = [row.get(c) for c in latest_cols]
+
+                    # Assign random team if user missed last round
+                    if any(p == "X" for p in latest_team):
+                        existing_teams = []
+                        for _, r in picks_df.iterrows():
+                            team = set([r.get(c) for c in round_cols if pd.notna(r.get(c)) and r.get(c) not in ["", None]])
+                            if team:
+                                existing_teams.append(team)
+
+                        random_team = generate_random_team(players_df, slot_rules, existing_teams)
+                        for i, col in enumerate(round_cols):
+                            picks_df.loc[idx, col] = random_team[i]
+                        for i, col in enumerate(latest_cols):
+                            picks_df.loc[idx, col] = random_team[i]
+
+                    # ---------------- CALCULATE SCORE BEFORE OPENING NEXT ROUND ----------------
+                    score = update_team_score(row["username"], last_round)
+                    picks_df.loc[idx, round_score_col] = score
+
+                save_picks(picks_df)
+                # Update last round info
+                set_last_round(last_round)
+                set_active_round("")  # close current round
+
+            # ------------------ OPEN NEXT ROUND ------------------
+            picks_df = load_picks()
+            round_cols = [f"{next_round_name}p{i}" for i in range(1,5)] + [f"{next_round_name}pw"]
             for col in round_cols:
                 if col not in picks_df.columns:
                     picks_df[col] = None
-
+            score_col = f"{next_round_name}_score"
+            if score_col not in picks_df.columns:
+                picks_df[score_col] = 0
             save_picks(picks_df)
             set_active_round(next_round_name)
-
             flash(f"New selection '{next_round_name}' opened!", "success")
             return redirect(url_for("admin_dashboard"))
 
-        # -------- FILE UPLOAD -------- #
-        elif request.files.get("upload_file"):
-            uploaded_file = request.files["upload_file"]
-
-            if uploaded_file.filename.endswith(".xlsx"):
-                df_new = pd.read_excel(uploaded_file)
-
-                if all(col in df_new.columns for col in ["username", "mayp1", "mayp2", "mayp3", "mayp4", "maypw"]):
-                    save_picks(df_new)
-                    flash("Picks updated successfully!", "success")
-
-                elif "starrings" in df_new.columns or df_new.shape[1] > 1:
-                    df_new.to_excel("starrings.xlsx", index=False)
-                    flash("Starrings updated successfully!", "success")
-
-            return redirect(url_for("admin_dashboard"))
-
-    # ------------------ RENDER PAGE ------------------ #
+    # ---------------- GET REQUEST ----------------
     return render_template(
         "admin_dashboard.html",
-        users=users_df.to_dict(orient="records"),
         picks=picks_df.to_dict(orient="records"),
+        users=users_df.to_dict(orient="records"),
         current_round=current_round
     )
+        
+
 
 @app.route("/admin/logout")
 def admin_logout():
@@ -339,10 +470,14 @@ def admin_logout():
     flash("Logged out successfully!", "success")
     return redirect(url_for("login"))
 
+
+
 @app.route('/fixtures')
 def fixtures():
     fixtures_list = read_fixtures('fixtures.xlsx')  # call helper
     return render_template('fixtures.html', fixtures=fixtures_list)
+
+
 
 @app.route("/select_players", methods=["GET", "POST"])
 def select_players():
@@ -356,24 +491,73 @@ def select_players():
         flash("Player selection is currently closed.", "warning")
         return redirect(url_for("dashboard"))
 
-    df = load_players()
+    # Load data
+    df_players = load_players()
     picks_df = load_picks()
 
-    # Prepare player selection
+    # ------------------- Prepare eligible players per slot ------------------- #
     categories = ["Div 1", "Div 2", "Div 3", "Div 4", "Wildcard"]
     players_by_category = []
 
     for i in range(5):
         rule = slot_rules[i]
         if rule == "any":
-            eligible_df = df.copy()
+            eligible_df = df_players.copy()
         else:
-            eligible_df = df[df["starrings"].isin(rule)]
+            eligible_df = df_players[df_players["starrings"].isin(rule)].copy()
 
-        # convert to list of dicts for template
-        eligible_list = eligible_df[["Player", "starrings"]].to_dict(orient="records")
-        players_by_category.append(eligible_list)
+        # Put 1.1 players first in Div 1
+        if i == 0:
+            eligible_df = eligible_df.sort_values(
+                by="starrings",
+                ascending=True
+            )
 
+        players_by_category.append(
+            eligible_df[["Player", "starrings"]].to_dict(orient="records")
+        )
+
+
+    # ------------------- Load user previous picks ------------------- #
+    user_row_df = picks_df[picks_df["username"] == username]
+    user_row = user_row_df.iloc[0] if not user_row_df.empty else None
+
+    latest_cols = ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
+    user_previous_picks = []
+
+    if user_row is not None:
+        user_previous_picks = [
+            user_row.get(c) for c in latest_cols
+            if pd.notna(user_row.get(c)) and user_row.get(c) not in ["", None]
+        ]
+
+        print(players_by_category)
+        print(user_previous_picks)
+
+        # ------------------- Assign random team if user missed last round ------------------- #
+        if any(p == "X" for p in user_previous_picks):
+            existing_teams = []
+            last_round = get_last_round()
+            if last_round:
+                round_cols = [f"{last_round}p{i}" for i in range(1, 5)] + [f"{last_round}pw"]
+                for _, row in picks_df.iterrows():
+                    team = set([
+                        row.get(c) for c in round_cols
+                        if pd.notna(row.get(c)) and row.get(c) not in ["", None]
+                    ])
+                    if team:
+                        existing_teams.append(team)
+                random_team = generate_random_team(df_players, slot_rules, existing_teams)
+                # Update last round and latest picks
+                for i, col in enumerate(round_cols):
+                    picks_df.loc[picks_df["username"] == username, col] = random_team[i]
+                for i, col in enumerate(latest_cols):
+                    picks_df.loc[picks_df["username"] == username, col] = random_team[i]
+                save_picks(picks_df)
+                user_previous_picks = random_team
+                flash(f"A random team was assigned for the missed round '{last_round}'.", "info")
+
+    # ------------------- Handle POST (form submission) ------------------- #
     if request.method == "POST":
         selected_players = [
             request.form.get("p1"),
@@ -394,6 +578,7 @@ def select_players():
         if username not in picks_df["username"].values:
             picks_df = pd.concat([picks_df, pd.DataFrame([{"username": username}])], ignore_index=True)
 
+        # Save picks
         for i, slot in enumerate(["p1", "p2", "p3", "p4", "pw"]):
             col = f"{active_round}{slot}"
             if col not in picks_df.columns:
@@ -403,13 +588,14 @@ def select_players():
         save_picks(picks_df)
         total_score = update_team_score(username, active_round)
         flash(f"Your picks have been saved! Current score: {total_score}", "success")
-        session["selected_players"] = selected_players
         return redirect(url_for("dashboard"))
 
+    # ------------------- Render template ------------------- #
     return render_template(
         "select_players.html",
         categories=categories,
-        players_by_category=players_by_category
+        players_by_category=players_by_category,
+        user_previous_picks=user_previous_picks
     )
 
 
