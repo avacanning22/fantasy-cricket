@@ -41,15 +41,43 @@ def save_picks(df):
 
 # ---------- Starrings ----------
 def load_starrings():
-    if os.path.exists(STARRINGS_FILE):
-        df = pd.read_excel(STARRINGS_FILE)
-        return dict(zip(df["Player"], df["starrings"]))
-    return {}
+    df = load_starrings_df()
+    if df.empty:
+        return {}
+    return dict(zip(df["Player"], df["starrings"]))
 
 def load_starrings_df():
-    if os.path.exists(STARRINGS_FILE):
-        return pd.read_excel(STARRINGS_FILE)
-    return pd.DataFrame(columns=["Player", "starrings"])
+    if not os.path.exists(STARRINGS_FILE):
+        return pd.DataFrame(columns=["Player", "starrings"])
+
+    df = pd.read_excel(STARRINGS_FILE)
+
+    # Convert from wide format:
+    # columns like 1.1, 1.2, 2.1, 2.2, 3.1, 3.2
+    # into long format: Player / starrings
+    long_rows = []
+
+    for col in df.columns:
+        for player in df[col].dropna():
+            player_name = str(player).strip()
+            if player_name:
+                try:
+                    starring_value = float(col)
+                except:
+                    starring_value = col
+
+                long_rows.append({
+                    "Player": player_name,
+                    "starrings": starring_value
+                })
+
+    result = pd.DataFrame(long_rows)
+
+    # Optional: remove duplicates just in case
+    if not result.empty:
+        result = result.drop_duplicates(subset=["Player"]).reset_index(drop=True)
+
+    return result
 
 # ---------- Players ----------
 def load_players():
