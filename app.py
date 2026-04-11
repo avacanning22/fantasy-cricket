@@ -17,7 +17,8 @@ from helpers import (
     get_last_round, set_last_round,
     update_team_score, team_already_exists,
     calculate_all_player_scores, read_fixtures,
-    generate_random_team, get_all_rounds_for_user
+    generate_random_team, get_all_rounds_for_user,
+    load_starrings_df
 )
 
 app = Flask(__name__)
@@ -492,26 +493,49 @@ def select_players():
         return redirect(url_for("dashboard"))
 
     # Load data
-    df_players = load_players()
+    df_starrings = load_starrings_df()
     picks_df = load_picks()
+
+    # # ------------------- Prepare eligible players per slot ------------------- #
+    # categories = ["Div 1", "Div 2", "Div 3", "Div 4", "Wildcard"]
+    # players_by_category = []
+
+    # for i in range(5):
+    #     rule = slot_rules[i]
+    #     if rule == "any":
+    #         eligible_df = df_players.copy()
+    #     else:
+    #         eligible_df = df_players[df_players["starrings"].isin(rule)].copy()
+
+    #     # Put 1.1 players first in Div 1
+    #     if i == 0:
+    #         eligible_df = eligible_df.sort_values(
+    #             by="starrings",
+    #             ascending=True
+    #         )
+
+    #     players_by_category.append(
+    #         eligible_df[["Player", "starrings"]].to_dict(orient="records")
+    #     )
 
     # ------------------- Prepare eligible players per slot ------------------- #
     categories = ["Div 1", "Div 2", "Div 3", "Div 4", "Wildcard"]
     players_by_category = []
 
+    # Optional cleanup
+    df_starrings = df_starrings.copy()
+    df_starrings["Player"] = df_starrings["Player"].astype(str).str.strip()
+
     for i in range(5):
         rule = slot_rules[i]
-        if rule == "any":
-            eligible_df = df_players.copy()
-        else:
-            eligible_df = df_players[df_players["starrings"].isin(rule)].copy()
 
-        # Put 1.1 players first in Div 1
+        if rule == "any":
+            eligible_df = df_starrings.copy()
+        else:
+            eligible_df = df_starrings[df_starrings["starrings"].isin(rule)].copy()
+
         if i == 0:
-            eligible_df = eligible_df.sort_values(
-                by="starrings",
-                ascending=True
-            )
+            eligible_df = eligible_df.sort_values(by="starrings", ascending=True)
 
         players_by_category.append(
             eligible_df[["Player", "starrings"]].to_dict(orient="records")
@@ -547,7 +571,8 @@ def select_players():
                     ])
                     if team:
                         existing_teams.append(team)
-                random_team = generate_random_team(df_players, slot_rules, existing_teams)
+                # random_team = generate_random_team(df_players, slot_rules, existing_teams)
+                random_team = generate_random_team(df_starrings, slot_rules, existing_teams)
                 # Update last round and latest picks
                 for i, col in enumerate(round_cols):
                     picks_df.loc[picks_df["username"] == username, col] = random_team[i]

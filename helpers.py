@@ -46,6 +46,11 @@ def load_starrings():
         return dict(zip(df["Player"], df["starrings"]))
     return {}
 
+def load_starrings_df():
+    if os.path.exists(STARRINGS_FILE):
+        return pd.read_excel(STARRINGS_FILE)
+    return pd.DataFrame(columns=["Player", "starrings"])
+
 # ---------- Players ----------
 def load_players():
     if os.path.exists(PLAYERS_FILE):
