@@ -460,7 +460,7 @@ window.addEventListener('DOMContentLoaded', function () {
                 <div class="player-column-body">
                     <ul>
                         {% for p in players_by_category[i] %}
-                        <li onclick="selectPlayer('p{{i+1}}', '{{p.Player}}', this)"
+                        <li onclick='selectPlayer("p{{i+1}}", {{ p.Player|tojson }}, this)'
                             class="{% if p.starrings == 1.1 %}div1-1{% endif %}{% if i == 3 %} div4{% endif %}">
                             {{ p.Player }}
                         </li>
