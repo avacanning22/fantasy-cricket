@@ -9,6 +9,9 @@ import re
 import os
 from helpers import DATA_DIR, USERS_FILE, PICKS_FILE, STARRINGS_FILE, PLAYERS_FILE, ACTIVE_ROUND_FILE, LAST_ROUND_FILE
 
+from helpers import seed_data_from_repo
+seed_data_from_repo()
+
 print("DATA_DIR =", DATA_DIR)
 print("DATA_DIR exists =", os.path.exists(DATA_DIR))
 print("DATA_DIR contents =", os.listdir(DATA_DIR) if os.path.exists(DATA_DIR) else "missing")
