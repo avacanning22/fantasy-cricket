@@ -97,7 +97,17 @@
         .flash.success { background: #c8e6c9; }
         .flash.danger { background: #ffcdd2; }
         .flash.warning { background: #fff3cd; }
+        .flash.info { background: #dbeafe; }
 
+        .empty-message {
+            margin-top: 15px;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            color: #666;
+            font-size: 15px;
+            border: 1px solid #eee;
+        }
     </style>
 </head>
 <body>
@@ -106,7 +116,6 @@
 
     <h1>Admin Dashboard</h1>
 
-    <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
             <div class="flash {{ category }}">{{ message }}</div>
@@ -117,7 +126,6 @@
         Current Round: {{ current_round or "None" }}
     </div>
 
-    <!-- Competition Controls -->
     <div class="section">
         <h2>Competition Control</h2>
 
@@ -145,7 +153,6 @@
         {% endif %}
     </div>
 
-    <!-- Upload Section -->
     <div class="section">
         <h2>Upload Picks / Starrings</h2>
         <form method="POST" enctype="multipart/form-data">
@@ -155,44 +162,52 @@
         </form>
     </div>
 
-    <!-- Users Table -->
     <div class="section">
         <h2>Users</h2>
-        <table>
-            <tr>
-                {% for col in users[0].keys() %}
-                    <th>{{ col }}</th>
-                {% endfor %}
-            </tr>
 
-            {% for user in users %}
-            <tr>
-                {% for val in user.values() %}
-                    <td>{{ val }}</td>
+        {% if users %}
+            <table>
+                <tr>
+                    {% for col in users[0].keys() %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+
+                {% for user in users %}
+                <tr>
+                    {% for val in user.values() %}
+                        <td>{{ val }}</td>
+                    {% endfor %}
+                </tr>
                 {% endfor %}
-            </tr>
-            {% endfor %}
-        </table>
+            </table>
+        {% else %}
+            <div class="empty-message">No users found.</div>
+        {% endif %}
     </div>
 
-    <!-- Picks Table -->
     <div class="section">
         <h2>Picks</h2>
-        <table>
-            <tr>
-                {% for col in picks[0].keys() %}
-                    <th>{{ col }}</th>
-                {% endfor %}
-            </tr>
 
-            {% for pick in picks %}
-            <tr>
-                {% for val in pick.values() %}
-                    <td>{{ val }}</td>
+        {% if picks %}
+            <table>
+                <tr>
+                    {% for col in picks[0].keys() %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+
+                {% for pick in picks %}
+                <tr>
+                    {% for val in pick.values() %}
+                        <td>{{ val }}</td>
+                    {% endfor %}
+                </tr>
                 {% endfor %}
-            </tr>
-            {% endfor %}
-        </table>
+            </table>
+        {% else %}
+            <div class="empty-message">No picks found yet.</div>
+        {% endif %}
     </div>
 
     <br>
