@@ -92,6 +92,10 @@ def login():
             (users_df["password"] == password)
         ]
 
+        print("Loaded users:")
+        print(users_df.head(20))
+        print("Usernames in file:", users_df["username"].tolist() if "username" in users_df.columns else "NO USERNAME COLUMN")
+        print("Trying login with:", username)
         if not user.empty:
             session["username"] = username
             session["name"] = user.iloc[0]["name"]
