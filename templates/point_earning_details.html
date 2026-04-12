@@ -110,6 +110,10 @@
             grid-template-columns: repeat(4, 1fr);
         }
 
+        .nav-bar.three-cols {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
         .nav-bar a {
             text-align: center;
             text-decoration: none;
@@ -443,18 +447,16 @@
         </div>
 
         <div class="nav-bar-wrap">
-            <div class="nav-bar">
+            <div class="nav-bar {% if navbar_mode in ['select', 'no_round', 'public'] %}three-cols{% endif %}">
                 {% if navbar_mode == "select" %}
                     <a href="{{ url_for('select_players') }}">Select Players</a>
                     <a href="{{ url_for('point_earning_details', from_page='select') }}" class="active">Point Earning Details</a>
                     <a href="{{ url_for('logout') }}">Logout</a>
-                    <a href="{{ url_for('logout') }}" style="display:none;"></a>
 
                 {% elif navbar_mode == "no_round" %}
                     <a href="{{ url_for('no_round') }}">Home</a>
                     <a href="{{ url_for('point_earning_details') }}" class="active">Point Earning Details</a>
                     <a href="{{ url_for('logout') }}">Logout</a>
-                    <a href="{{ url_for('logout') }}" style="display:none;"></a>
 
                 {% elif navbar_mode == "dashboard" %}
                     <a href="{{ url_for('dashboard') }}">Dashboard</a>
@@ -466,7 +468,6 @@
                     <a href="{{ url_for('index') }}">Home</a>
                     <a href="{{ url_for('how_it_works') }}">How It Works</a>
                     <a href="{{ url_for('login') }}">Login / Register</a>
-                    <a href="{{ url_for('login') }}" style="display:none;"></a>
                 {% endif %}
             </div>
         </div>
