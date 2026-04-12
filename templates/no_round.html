@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No Round Available</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+        .wrap {
+            max-width: 700px;
+            margin: 100px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 15px;
+        }
+        p {
+            color: #555;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+        a.button {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 12px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+        a.button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>No Round Available Right Now</h1>
+        <p>
+            There is currently no active round and no previous round has been set yet.
+        </p>
+        <p>
+            Please check back later once the admin opens the first round.
+        </p>
+        <a class="button" href="{{ url_for('logout') }}">Log out</a>
+    </div>
+</body>
+</html>

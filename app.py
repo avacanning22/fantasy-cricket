@@ -6,24 +6,11 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs, urljoin
 import re
-import os
-from helpers import DATA_DIR, USERS_FILE, PICKS_FILE, STARRINGS_FILE, PLAYERS_FILE, ACTIVE_ROUND_FILE, LAST_ROUND_FILE
 
-from helpers import seed_data_from_repo
-seed_data_from_repo()
-
-print("DATA_DIR =", DATA_DIR)
-print("DATA_DIR exists =", os.path.exists(DATA_DIR))
-print("DATA_DIR contents =", os.listdir(DATA_DIR) if os.path.exists(DATA_DIR) else "missing")
-
-for path in [USERS_FILE, PICKS_FILE, STARRINGS_FILE, PLAYERS_FILE, ACTIVE_ROUND_FILE, LAST_ROUND_FILE]:
-    print(path, "exists =", os.path.exists(path))
-
-
-# print(os.listdir("templates"))
-
-# Import all helpers from helpers.py
 from helpers import (
+    DATA_DIR, USERS_FILE, PICKS_FILE, STARRINGS_FILE, PLAYERS_FILE,
+    ACTIVE_ROUND_FILE, LAST_ROUND_FILE,
+    seed_data_from_repo,
     load_users, save_user, load_picks, save_picks,
     load_starrings, load_players,
     get_active_round, set_active_round,
@@ -33,6 +20,15 @@ from helpers import (
     generate_random_team, get_all_rounds_for_user,
     load_starrings_df
 )
+
+seed_data_from_repo()
+
+print("DATA_DIR =", DATA_DIR)
+print("DATA_DIR exists =", os.path.exists(DATA_DIR))
+print("DATA_DIR contents =", os.listdir(DATA_DIR) if os.path.exists(DATA_DIR) else "missing")
+
+for path in [USERS_FILE, PICKS_FILE, STARRINGS_FILE, PLAYERS_FILE, ACTIVE_ROUND_FILE, LAST_ROUND_FILE]:
+    print(path, "exists =", os.path.exists(path))
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
@@ -59,14 +55,14 @@ def normalize_username_column(df):
 
 
 # Custom filter to display float nicely
-@app.template_filter('clean_float')
+@app.template_filter("clean_float")
 def clean_float(value):
     try:
         f = float(value)
         if f.is_integer():
             return str(int(f))
         return str(f)
-    except:
+    except Exception:
         return str(value)
 
 
@@ -80,6 +76,13 @@ def index():
 @app.route("/how_it_works")
 def how_it_works():
     return render_template("how_it_works.html")
+
+
+@app.route("/no_round")
+def no_round():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    return render_template("no_round.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -99,6 +102,7 @@ def login():
         print(users_df.head(20))
         print("Usernames in file:", users_df["username"].tolist() if "username" in users_df.columns else "NO USERNAME COLUMN")
         print("Trying login with:", username)
+
         if not user.empty:
             session["username"] = username
             session["name"] = user.iloc[0]["name"]
@@ -109,6 +113,11 @@ def login():
 
             picks_df = normalize_username_column(load_picks())
             active_round = get_active_round()
+            last_round = get_last_round()
+
+            # New logic: no active and no last round
+            if not active_round and not last_round:
+                return redirect(url_for("no_round"))
 
             if active_round:
                 user_row = picks_df[picks_df["username"] == username]
@@ -180,6 +189,10 @@ def dashboard():
 
     active_round = get_active_round()
     last_round = get_last_round()
+
+    # New logic: no active and no last round
+    if not active_round and not last_round:
+        return redirect(url_for("no_round"))
 
     if active_round:
         round_name = active_round
@@ -316,7 +329,7 @@ def dashboard():
 
     try:
         user_score = update_team_score(username, round_name) if round_name else 0
-    except:
+    except Exception:
         user_score = 0
 
     if not active_round and user_row is not None:
@@ -391,6 +404,7 @@ def admin_dashboard():
         elif action == "open_round":
             last_round = get_last_round()
             current_month_index = -1
+
             if last_round:
                 match = re.match(r"([A-Za-z]+)", last_round)
                 last_month_name = match.group(1).capitalize() if match else None
@@ -468,10 +482,10 @@ def admin_logout():
     return redirect(url_for("login"))
 
 
-@app.route('/fixtures')
+@app.route("/fixtures")
 def fixtures():
-    fixtures_list = read_fixtures('fixtures.xlsx')
-    return render_template('fixtures.html', fixtures=fixtures_list)
+    fixtures_list = read_fixtures("fixtures.xlsx")
+    return render_template("fixtures.html", fixtures=fixtures_list)
 
 
 @app.route("/select_players", methods=["GET", "POST"])
@@ -630,6 +644,10 @@ def logout():
 def player_stats(player_name):
     active_round = get_active_round() or get_last_round()
 
+    if not active_round:
+        flash("No active or previous round is available.", "warning")
+        return redirect(url_for("no_round"))
+
     df = load_players()
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
@@ -677,7 +695,7 @@ def player_stats(player_name):
                     pd.to_numeric(df_matches.iloc[:, 11], errors="coerce") /
                     pd.to_numeric(df_matches.iloc[:, 9], errors="coerce")
                 ).round(2)
-            except:
+            except Exception:
                 df_matches["Economy"] = None
 
     howout_report_url = (
@@ -726,7 +744,7 @@ def player_stats(player_name):
                         balls = float(val_balls) if isinstance(val_balls, str) else float(val_balls)
                         runs_per_ball = round(runs / balls, 2) if balls != 0 else 0
                         sr_val = round((runs / balls) * 100, 2) if balls != 0 else 0
-                except:
+                except Exception:
                     runs_per_ball = sr_val = "Error"
                 r.append(runs_per_ball)
                 r.append(sr_val)
