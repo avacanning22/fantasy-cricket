@@ -54,27 +54,75 @@
             color: white;
             padding-bottom: 0;
             box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+            position: relative;
+            z-index: 1;
         }
 
         .navbar {
             max-width: 1240px;
             margin: 0 auto;
-            display: flex;
+            display: grid;
+            grid-template-columns: 0.7fr auto 1.3fr;
             align-items: center;
-            justify-content: center;
             padding: 22px 20px 18px;
+            gap: 16px;
+            position: relative;
+            z-index: 2;
         }
 
-        .navbar img {
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .navbar-center {
+            display: flex;
+            justify-content: center;
+        }
+
+        .navbar img.logo-main {
             height: 108px;
             max-width: 100%;
             object-fit: contain;
             filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
         }
 
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .sponsor-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 14px;
+            padding: 8px 12px;
+        }
+
+        .sponsor-text {
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .sponsor-box img {
+            height: 44px;
+            width: auto;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
         .nav-bar-wrap {
             background: rgba(255,255,255,0.1);
             border-top: 1px solid rgba(255,255,255,0.14);
+            position: relative;
+            z-index: 3;
         }
 
         .nav-bar {
@@ -82,17 +130,26 @@
             margin: 0 auto;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
+            min-height: 56px;
+            position: relative;
+            z-index: 4;
         }
 
         .nav-bar a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             text-align: center;
             text-decoration: none;
             color: white;
             font-weight: 700;
             font-size: 15px;
-            padding: 16px 12px;
+            padding: 0 12px;
             border-right: 1px solid rgba(255,255,255,0.14);
             transition: background-color 0.2s ease, color 0.2s ease;
+            position: relative;
+            z-index: 5;
+            pointer-events: auto;
         }
 
         .nav-bar a:last-child {
@@ -517,7 +574,18 @@
 
     <div class="top-shell">
         <div class="navbar">
-            <img src="{{ url_for('static', filename='logo_fantasy.png') }}" alt="Logo">
+            <div class="navbar-left"></div>
+
+            <div class="navbar-center">
+                <img src="{{ url_for('static', filename='logo_fantasy.png') }}" alt="Logo" class="logo-main">
+            </div>
+
+            <div class="navbar-right">
+                <div class="sponsor-box">
+                    <span class="sponsor-text">Sponsored by</span>
+                    <img src="{{ url_for('static', filename='aerial.jpg') }}" alt="Sponsor">
+                </div>
+            </div>
         </div>
 
         <div class="nav-bar-wrap">

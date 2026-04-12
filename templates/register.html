@@ -226,10 +226,10 @@
                 <input type="text" id="name" name="name" placeholder="Full Name" required>
 
                 <div class="input-hint">
-                    Username format: <strong>@FirstName.Surname</strong>
+                    Username format: <strong>FirstName.Surname</strong>
                 </div>
 
-                <input type="text" id="username" name="username" placeholder="@FirstName.Surname" required>
+                <input type="text" id="username" name="username" placeholder="FirstName.Surname" required>
                 <input type="text" name="phone" placeholder="Phone" required>
                 <input type="password" name="password" placeholder="Password" required>
                 <button type="submit">Register</button>
@@ -259,7 +259,7 @@
 
         function suggestUsernameFromName(fullName) {
             if (!fullName || !fullName.trim()) {
-                return "@FirstName.Surname";
+                return "FirstName.Surname";
             }
 
             const parts = fullName
@@ -269,21 +269,21 @@
                 .filter(Boolean);
 
             if (parts.length === 0) {
-                return "@FirstName.Surname";
+                return "FirstName.Surname";
             }
 
             const firstName = parts[0];
             const surname = parts.slice(1).join("");
 
             if (!firstName) {
-                return "@FirstName.Surname";
+                return "FirstName.Surname";
             }
 
             if (!surname) {
-                return `@${firstName}`;
+                return `${firstName}`;
             }
 
-            return `@${firstName}.${surname}`;
+            return `${firstName}.${surname}`;
         }
 
         document.addEventListener("DOMContentLoaded", function () {

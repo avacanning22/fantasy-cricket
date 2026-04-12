@@ -2,18 +2,18 @@ import os
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from points import calculate_fantasy_score  # keep your scoring logic
+from points import calculate_fantasy_score
 import random
 
+DATA_DIR = os.environ.get("DATA_DIR", "data")
+os.makedirs(DATA_DIR, exist_ok=True)
 
-
-# ---------- File Paths ----------
-ACTIVE_ROUND_FILE = "active_round.txt"
-LAST_ROUND_FILE = "last_round.txt"
-USERS_FILE = "users.xlsx"
-PICKS_FILE = "picks.xlsx"
-STARRINGS_FILE = "starrings.xlsx"
-PLAYERS_FILE = "players.xlsx"
+ACTIVE_ROUND_FILE = os.path.join(DATA_DIR, "active_round.txt")
+LAST_ROUND_FILE = os.path.join(DATA_DIR, "last_round.txt")
+USERS_FILE = os.path.join(DATA_DIR, "users.xlsx")
+PICKS_FILE = os.path.join(DATA_DIR, "picks.xlsx")
+STARRINGS_FILE = os.path.join(DATA_DIR, "starrings.xlsx")
+PLAYERS_FILE = os.path.join(DATA_DIR, "players.xlsx")
 
 # ---------- Users ----------
 def load_users():
