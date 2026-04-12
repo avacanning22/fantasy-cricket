@@ -492,20 +492,26 @@ def get_all_rounds_for_user(username):
     return sorted(rounds, key=sort_key)
 
 
+import shutil
+import os
+
 def seed_data_from_repo():
-    repo_data_dir = "data"
+    seed_dir = "seed_data"
 
     file_pairs = [
-        (os.path.join(repo_data_dir, "users.xlsx"), USERS_FILE),
-        (os.path.join(repo_data_dir, "picks.xlsx"), PICKS_FILE),
-        (os.path.join(repo_data_dir, "starrings.xlsx"), STARRINGS_FILE),
-        (os.path.join(repo_data_dir, "players.xlsx"), PLAYERS_FILE),
-        (os.path.join(repo_data_dir, "active_round.txt"), ACTIVE_ROUND_FILE),
-        (os.path.join(repo_data_dir, "last_round.txt"), LAST_ROUND_FILE),
+        (os.path.join(seed_dir, "users.xlsx"), USERS_FILE),
+        (os.path.join(seed_dir, "picks.xlsx"), PICKS_FILE),
+        (os.path.join(seed_dir, "starrings.xlsx"), STARRINGS_FILE),
+        (os.path.join(seed_dir, "players.xlsx"), PLAYERS_FILE),
+        (os.path.join(seed_dir, "active_round.txt"), ACTIVE_ROUND_FILE),
+        (os.path.join(seed_dir, "last_round.txt"), LAST_ROUND_FILE),
     ]
 
     for src, dst in file_pairs:
-        if os.path.exists(src) and not os.path.exists(dst):
-            import shutil
+        print(f"Checking seed file: {src} -> {dst}")
+        print(f"Source exists: {os.path.exists(src)}")
+        if os.path.exists(src):
             shutil.copy(src, dst)
             print(f"Copied {src} -> {dst}")
+        else:
+            print(f"Missing seed file: {src}")
