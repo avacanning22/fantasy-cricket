@@ -390,7 +390,7 @@
             }
         }
     </style>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
 </head>
 <body>
 
@@ -424,7 +424,7 @@
         <div class="hero">
             <div class="hero-top">
                 <div class="hero-copy">
-                    <h1>Welcome back, {{ session['name'] }}.</h1>
+                    <h1>Welcome, {{ session['name'] }}.</h1>
                     <p>There is no active round at the moment, and no previous round is available to display yet.</p>
                 </div>
                 <div class="round-badge">Status: Waiting for First Round</div>
@@ -446,26 +446,6 @@
                 <div class="action-row">
                     <a class="btn btn-secondary" href="{{ url_for('point_earning_details') }}">View Point Earning Details</a>
                     <a class="btn btn-primary" href="{{ url_for('logout') }}">Logout</a>
-                </div>
-            </div>
-
-            <div class="info-grid">
-                <div class="info-card">
-                    <div class="info-label">Current Status</div>
-                    <div class="info-value">No active round</div>
-                    <div class="info-subtext">The admin has not opened a live selection window yet.</div>
-                </div>
-
-                <div class="info-card">
-                    <div class="info-label">Previous Round</div>
-                    <div class="info-value">Not available</div>
-                    <div class="info-subtext">There is no previous round saved to show on your dashboard.</div>
-                </div>
-
-                <div class="info-card">
-                    <div class="info-label">What happens next</div>
-                    <div class="info-value">Wait for round opening</div>
-                    <div class="info-subtext">As soon as a round is opened, you’ll be able to pick your players.</div>
                 </div>
             </div>
         </div>
