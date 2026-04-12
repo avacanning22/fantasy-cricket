@@ -596,6 +596,24 @@ def select_players():
             flash("Please select all 5 players.", "warning")
             return redirect(url_for("select_players"))
 
+        # ---------- NEW RULE: max 1 carry-over from previous month ----------
+        previous_team = []
+        if user_row is not None:
+            previous_team = [
+                user_row.get(c) for c in ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
+                if pd.notna(user_row.get(c)) and user_row.get(c) not in ["", None, "X"]
+            ]
+
+        overlap = set(selected_players) & set(previous_team)
+
+        if len(overlap) > 1:
+            flash(
+                f"You can carry over at most 1 player from your previous month's team. "
+                f"You kept {len(overlap)}: {', '.join(sorted(overlap))}",
+                "danger"
+            )
+            return redirect(url_for("select_players"))
+
         if team_already_exists(username, selected_players, active_round):
             flash("This exact team has already been selected.", "danger")
             return redirect(url_for("select_players"))
