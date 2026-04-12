@@ -614,27 +614,15 @@
 
         <div class="stats-grid">
             <div class="stat-card highlight">
-                <div class="stat-label">Your Total</div>
+                <div class="stat-label">Your Score for This Month</div>
                 <div class="stat-value">{{ user_score|clean_float }}</div>
                 <div class="stat-subtext">Points from your current displayed team</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-label">Players Picked</div>
-                <div class="stat-value">{{ user_picks|length if user_picks else 0 }}</div>
-                <div class="stat-subtext">Including your captain</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-label">Top Players Shown</div>
-                <div class="stat-value">{{ player_leaderboard|length }}</div>
-                <div class="stat-subtext">Current leaderboard preview</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-label">History Rounds</div>
-                <div class="stat-value">{{ monthly_scores|length if monthly_scores else 0 }}</div>
-                <div class="stat-subtext">Past team summaries available</div>
+                <div class="stat-label">Your Total Score</div>
+                <div class="stat-value">{{ user_score|clean_float }}</div>
+                <div class="stat-subtext">Points for this season</div>
             </div>
         </div>
 
