@@ -30,8 +30,10 @@
             font-family: 'Inter', sans-serif;
             display: flex;
             flex-direction: column;
+            color: var(--text);
         }
 
+        /* ---------- HEADER ---------- */
         .top-shell {
             background: linear-gradient(135deg, var(--maroon) 0%, #90162a 55%, #b11f38 100%);
             color: white;
@@ -41,17 +43,59 @@
         .navbar {
             max-width: 1240px;
             margin: 0 auto;
-            display: flex;
+            display: grid;
+            grid-template-columns: 0.7fr auto 1.3fr;
             align-items: center;
-            justify-content: center;
             padding: 22px 20px 18px;
+            gap: 16px;
         }
 
-        .navbar img {
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .navbar-center {
+            display: flex;
+            justify-content: center;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .navbar img.logo-main {
             height: 108px;
             max-width: 100%;
             object-fit: contain;
             filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+        }
+
+        .sponsor-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 16px;
+            padding: 12px 18px;
+        }
+
+        .sponsor-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .sponsor-box img {
+            height: 60px;
+            width: auto;
+            border-radius: 8px;
+            object-fit: cover;
         }
 
         .nav-bar-wrap {
@@ -86,6 +130,7 @@
             background-color: rgba(255,255,255,0.12);
         }
 
+        /* ---------- PAGE ---------- */
         .page {
             flex: 1;
             display: flex;
@@ -129,6 +174,7 @@
             border: 1px solid var(--border);
             border-radius: 10px;
             font-size: 14px;
+            font-family: inherit;
         }
 
         .input-hint {
@@ -145,6 +191,7 @@
             border-radius: 12px;
             border: none;
             font-weight: 800;
+            font-family: inherit;
             background: linear-gradient(135deg, var(--gold) 0%, #ffd86c 100%);
             cursor: pointer;
             margin-top: 6px;
@@ -164,6 +211,7 @@
             margin-top: 16px;
             display: block;
             font-size: 14px;
+            color: inherit;
         }
 
         .contact {
@@ -173,7 +221,34 @@
             line-height: 1.6;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 720px) {
+            .navbar {
+                padding: 18px 12px 16px;
+                grid-template-columns: 1fr;
+                justify-items: center;
+                gap: 12px;
+            }
+
+            .navbar-left {
+                display: none;
+            }
+
+            .navbar-right {
+                justify-content: center;
+            }
+
+            .navbar img.logo-main {
+                height: 84px;
+            }
+
+            .sponsor-box {
+                padding: 10px 14px;
+            }
+
+            .sponsor-box img {
+                height: 52px;
+            }
+
             .nav-bar {
                 grid-template-columns: 1fr;
             }
@@ -186,30 +261,14 @@
             .nav-bar a:last-child {
                 border-bottom: none;
             }
-        }
 
-                .sponsor-box {
-            display: flex;
-            align-items: center;
-            gap: 14px; /* more spacing */
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.16);
-            border-radius: 16px;
-            padding: 12px 18px; /* bigger box */
-        }
+            .page {
+                padding: 24px 16px;
+            }
 
-        .sponsor-text {
-            font-size: 14px; /* slightly bigger text */
-            font-weight: 700;
-            color: white;
-            white-space: nowrap;
-        }
-
-        .sponsor-box img {
-            height: 60px; /* bigger logo */
-            width: auto;
-            border-radius: 8px;
-            object-fit: cover;
+            .register-card {
+                padding: 24px 20px;
+            }
         }
     </style>
 </head>

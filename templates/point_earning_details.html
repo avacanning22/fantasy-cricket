@@ -43,17 +43,59 @@
         .navbar {
             max-width: 1240px;
             margin: 0 auto;
-            display: flex;
+            display: grid;
+            grid-template-columns: 0.7fr auto 1.3fr;
             align-items: center;
-            justify-content: center;
             padding: 22px 20px 18px;
+            gap: 16px;
         }
 
-        .navbar img {
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .navbar-center {
+            display: flex;
+            justify-content: center;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .navbar img.logo-main {
             height: 108px;
             max-width: 100%;
             object-fit: contain;
             filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+        }
+
+        .sponsor-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 16px;
+            padding: 12px 18px;
+        }
+
+        .sponsor-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .sponsor-box img {
+            height: 60px;
+            width: auto;
+            border-radius: 8px;
+            object-fit: cover;
         }
 
         .nav-bar-wrap {
@@ -323,10 +365,29 @@
         @media (max-width: 720px) {
             .navbar {
                 padding: 18px 12px 16px;
+                grid-template-columns: 1fr;
+                justify-items: center;
+                gap: 12px;
             }
 
-            .navbar img {
+            .navbar-left {
+                display: none;
+            }
+
+            .navbar-right {
+                justify-content: center;
+            }
+
+            .navbar img.logo-main {
                 height: 84px;
+            }
+
+            .sponsor-box {
+                padding: 10px 14px;
+            }
+
+            .sponsor-box img {
+                height: 52px;
             }
 
             .nav-bar {
@@ -360,30 +421,6 @@
                 padding: 18px;
             }
         }
-
-                .sponsor-box {
-            display: flex;
-            align-items: center;
-            gap: 14px; /* more spacing */
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.16);
-            border-radius: 16px;
-            padding: 12px 18px; /* bigger box */
-        }
-
-        .sponsor-text {
-            font-size: 14px; /* slightly bigger text */
-            font-weight: 700;
-            color: white;
-            white-space: nowrap;
-        }
-
-        .sponsor-box img {
-            height: 60px; /* bigger logo */
-            width: auto;
-            border-radius: 8px;
-            object-fit: cover;
-        }
     </style>
 </head>
 <body>
@@ -410,6 +447,7 @@
                     <a href="{{ url_for('select_players') }}">Select Players</a>
                     <a href="{{ url_for('point_earning_details', from_page='select') }}" class="active">Point Earning Details</a>
                     <a href="{{ url_for('logout') }}">Logout</a>
+                    <a href="{{ url_for('logout') }}" style="display:none;"></a>
 
                 {% elif navbar_mode == "dashboard" %}
                     <a href="{{ url_for('dashboard') }}">Dashboard</a>
@@ -421,6 +459,7 @@
                     <a href="{{ url_for('index') }}">Home</a>
                     <a href="{{ url_for('how_it_works') }}">How It Works</a>
                     <a href="{{ url_for('login') }}">Login / Register</a>
+                    <a href="{{ url_for('login') }}" style="display:none;"></a>
                 {% endif %}
             </div>
         </div>
