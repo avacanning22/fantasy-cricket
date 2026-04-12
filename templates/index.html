@@ -310,7 +310,18 @@
 
     <div class="top-shell">
         <div class="navbar">
-            <img src="{{ url_for('static', filename='logo_fantasy.png') }}" alt="Logo">
+            <div class="navbar-left"></div>
+
+            <div class="navbar-center">
+                <img src="{{ url_for('static', filename='logo_fantasy.png') }}" alt="Logo" class="logo-main">
+            </div>
+
+            <div class="navbar-right">
+                <div class="sponsor-box">
+                    <span class="sponsor-text">Sponsored by</span>
+                    <img src="{{ url_for('static', filename='aerial.jpg') }}" alt="Sponsor">
+                </div>
+            </div>
         </div>
 
         <div class="nav-bar-wrap">
