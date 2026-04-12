@@ -1,57 +1,476 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>No Round Available</title>
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f7f7f7;
-            margin: 0;
-            padding: 0;
+        * {
+            box-sizing: border-box;
         }
-        .wrap {
-            max-width: 700px;
-            margin: 100px auto;
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+
+        :root {
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --card-soft: #fcfcff;
+            --text: #18212f;
+            --muted: #6b7280;
+            --border: #e7eaf0;
+            --maroon: #7b1020;
+            --maroon-dark: #5f0b18;
+            --gold: #f5c84c;
+            --gold-dark: #e1b534;
+            --accent: #eef2ff;
+            --success-bg: #eaf8ef;
+            --success-text: #216e39;
+            --danger-bg: #fdecec;
+            --danger-text: #b42318;
+            --warning-bg: #fff6df;
+            --warning-text: #9a6700;
+            --info-bg: #eaf2ff;
+            --info-text: #1d4ed8;
+            --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+            --radius: 18px;
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(circle at top left, #fff4cc 0%, #f6f7fb 28%),
+                var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .top-shell {
+            background: linear-gradient(135deg, var(--maroon) 0%, #90162a 55%, #b11f38 100%);
+            color: white;
+            padding-bottom: 0;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+            position: relative;
+            z-index: 1;
+        }
+
+        .navbar {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 0.7fr auto 1.3fr;
+            align-items: center;
+            padding: 22px 20px 18px;
+            gap: 16px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .navbar-center {
+            display: flex;
+            justify-content: center;
+        }
+
+        .navbar img.logo-main {
+            height: 108px;
+            max-width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .sponsor-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 16px;
+            padding: 12px 18px;
+        }
+
+        .sponsor-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .sponsor-box img {
+            height: 60px;
+            width: auto;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .nav-bar-wrap {
+            background: rgba(255,255,255,0.1);
+            border-top: 1px solid rgba(255,255,255,0.14);
+            position: relative;
+            z-index: 3;
+        }
+
+        .nav-bar {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .nav-bar a {
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 16px 12px;
+            border-right: 1px solid rgba(255,255,255,0.14);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .nav-bar a:last-child {
+            border-right: none;
+        }
+
+        .nav-bar a:hover,
+        .nav-bar a.active {
+            background-color: rgba(255,255,255,0.12);
+        }
+
+        .container {
+            width: min(1240px, 94%);
+            margin: 28px auto 40px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #ffffff 0%, #fffaf0 100%);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -60px;
+            top: -60px;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(245,200,76,0.26), rgba(245,200,76,0));
+            pointer-events: none;
+        }
+
+        .hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .hero-copy h1 {
+            margin: 0 0 8px;
+            font-size: 40px;
+            line-height: 1.05;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .hero-copy p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.5;
+            max-width: 760px;
+        }
+
+        .round-badge {
+            background: #fff3cf;
+            color: #7a5200;
+            border: 1px solid #f3dd95;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .section-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 22px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+        .empty-state-card {
+            background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 36px 28px;
             text-align: center;
         }
-        h1 {
-            margin-bottom: 15px;
+
+        .empty-state-card h2 {
+            margin: 0 0 12px;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text);
         }
-        p {
-            color: #555;
-            font-size: 18px;
+
+        .empty-state-card p {
+            margin: 0 auto 12px;
+            max-width: 700px;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .status-pill {
+            display: inline-block;
+            margin-bottom: 18px;
+            background: #fff6df;
+            color: #9a6700;
+            border: 1px solid #f1dc9a;
+            border-radius: 999px;
+            padding: 9px 14px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-top: 22px;
+        }
+
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-weight: 700;
+            font-size: 15px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--maroon) 0%, #992239 100%);
+            color: white;
+            box-shadow: 0 10px 20px rgba(123, 16, 32, 0.18);
+        }
+
+        .btn-secondary {
+            background: #fff7e1;
+            color: #7a5200;
+            border: 1px solid #f1dc9a;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            margin-top: 24px;
+        }
+
+        .info-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .info-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .info-value {
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1.2;
+            color: var(--text);
+        }
+
+        .info-subtext {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 14px;
             line-height: 1.5;
         }
-        a.button {
-            display: inline-block;
-            margin-top: 25px;
-            padding: 12px 20px;
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
+
+        @media (max-width: 1100px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
         }
-        a.button:hover {
-            background: #0056b3;
+
+        @media (max-width: 720px) {
+            .navbar {
+                padding: 18px 12px 16px;
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .navbar-left,
+            .navbar-center,
+            .navbar-right {
+                justify-content: center;
+            }
+
+            .navbar img.logo-main {
+                height: 84px;
+            }
+
+            .nav-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-bar a {
+                border-right: none;
+                border-bottom: 1px solid rgba(255,255,255,0.14);
+            }
+
+            .nav-bar a:last-child {
+                border-bottom: none;
+            }
+
+            .hero {
+                padding: 22px 18px;
+            }
+
+            .hero-copy h1 {
+                font-size: 30px;
+            }
+
+            .container {
+                width: 95%;
+                margin-top: 18px;
+            }
+
+            .section-card,
+            .info-card {
+                padding: 18px;
+            }
+
+            .empty-state-card {
+                padding: 28px 18px;
+            }
         }
     </style>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 </head>
 <body>
-    <div class="wrap">
-        <h1>No Round Available Right Now</h1>
-        <p>
-            There is currently no active round and no previous round has been set yet.
-        </p>
-        <p>
-            Please check back later once the admin opens the first round.
-        </p>
-        <a class="button" href="{{ url_for('logout') }}">Log out</a>
+
+    <div class="top-shell">
+        <div class="navbar">
+            <div class="navbar-left"></div>
+
+            <div class="navbar-center">
+                <img src="{{ url_for('static', filename='logo_fantasy.png') }}" alt="Logo" class="logo-main">
+            </div>
+
+            <div class="navbar-right">
+                <div class="sponsor-box">
+                    <span class="sponsor-text">Sponsored by</span>
+                    <img src="{{ url_for('static', filename='aerial.jpg') }}" alt="Sponsor">
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-bar-wrap">
+            <div class="nav-bar">
+                <a href="{{ url_for('no_round') }}" class="active">Home</a>
+                <a href="{{ url_for('point_earning_details') }}">Point Earning Details</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
     </div>
+
+    <div class="container">
+
+        <div class="hero">
+            <div class="hero-top">
+                <div class="hero-copy">
+                    <h1>Welcome back, {{ session['name'] }}.</h1>
+                    <p>There is no active round at the moment, and no previous round is available to display yet.</p>
+                </div>
+                <div class="round-badge">Status: Waiting for First Round</div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="empty-state-card">
+                <div class="status-pill">No Round Available</div>
+                <h2>The competition hasn’t started yet.</h2>
+                <p>
+                    Once the admin opens the first round, this page will update and you’ll be able to build your team,
+                    track scores, and follow the monthly leaderboard.
+                </p>
+                <p>
+                    For now, you can still review how scoring works using the point earning details page.
+                </p>
+
+                <div class="action-row">
+                    <a class="btn btn-secondary" href="{{ url_for('point_earning_details') }}">View Point Earning Details</a>
+                    <a class="btn btn-primary" href="{{ url_for('logout') }}">Logout</a>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-label">Current Status</div>
+                    <div class="info-value">No active round</div>
+                    <div class="info-subtext">The admin has not opened a live selection window yet.</div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-label">Previous Round</div>
+                    <div class="info-value">Not available</div>
+                    <div class="info-subtext">There is no previous round saved to show on your dashboard.</div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-label">What happens next</div>
+                    <div class="info-value">Wait for round opening</div>
+                    <div class="info-subtext">As soon as a round is opened, you’ll be able to pick your players.</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
 </body>
 </html>
