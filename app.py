@@ -623,8 +623,13 @@ def select_players():
 
 @app.route("/point_earning_details")
 def point_earning_details():
+    active_round = get_active_round()
+    last_round = get_last_round()
+
     if "username" in session:
-        if request.args.get("from_page") == "select":
+        if not active_round and not last_round:
+            navbar_mode = "no_round"
+        elif request.args.get("from_page") == "select":
             navbar_mode = "select"
         else:
             navbar_mode = "dashboard"

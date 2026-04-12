@@ -450,6 +450,12 @@
                     <a href="{{ url_for('logout') }}">Logout</a>
                     <a href="{{ url_for('logout') }}" style="display:none;"></a>
 
+                {% elif navbar_mode == "no_round" %}
+                    <a href="{{ url_for('no_round') }}">Home</a>
+                    <a href="{{ url_for('point_earning_details') }}" class="active">Point Earning Details</a>
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                    <a href="{{ url_for('logout') }}" style="display:none;"></a>
+
                 {% elif navbar_mode == "dashboard" %}
                     <a href="{{ url_for('dashboard') }}">Dashboard</a>
                     <a href="{{ url_for('point_earning_details') }}" class="active">Point Earning Details</a>
