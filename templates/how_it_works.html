@@ -1,107 +1,608 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>How It Works</title>
+
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --text: #18212f;
+            --muted: #6b7280;
+            --border: #e7eaf0;
+            --maroon: #7b1020;
+            --gold: #f5c84c;
+            --gold-dark: #e1b534;
+            --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+        }
+
         body {
-            background-color: #FFF9C4;
-            font-family: Arial, sans-serif;
+            margin: 0;
+            background:
+                radial-gradient(circle at top left, #fff4cc 0%, #f6f7fb 28%),
+                var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        /* ---------- HEADER ---------- */
+        .top-shell {
+            background: linear-gradient(135deg, var(--maroon) 0%, #90162a 55%, #b11f38 100%);
+            color: white;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        }
+
+        .navbar {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 22px 20px 18px;
+        }
+
+        .navbar img {
+            height: 108px;
+            max-width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+        }
+
+        .nav-bar-wrap {
+            background: rgba(255,255,255,0.1);
+            border-top: 1px solid rgba(255,255,255,0.14);
+        }
+
+        .nav-bar {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .nav-bar a {
             text-align: center;
-            padding: 50px;
+            text-decoration: none;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 16px 12px;
+            border-right: 1px solid rgba(255,255,255,0.14);
+            transition: background-color 0.2s ease;
         }
-        h1 {
-            color: #333;
+
+        .nav-bar a:last-child {
+            border-right: none;
         }
-        h2 {
-            margin-top: 40px;
-            color: #333;
+
+        .nav-bar a:hover,
+        .nav-bar a.active {
+            background-color: rgba(255,255,255,0.12);
         }
-        p {
+
+        /* ---------- PAGE ---------- */
+        .container {
+            width: min(1180px, 94%);
+            margin: 28px auto 40px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #ffffff 0%, #fffaf0 100%);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -60px;
+            top: -60px;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(245,200,76,0.26), rgba(245,200,76,0));
+            pointer-events: none;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            background: #fff3cf;
+            color: #7a5200;
+            border: 1px solid #f3dd95;
+            border-radius: 999px;
+            padding: 9px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: 42px;
+            line-height: 1.05;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .hero p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--muted);
             max-width: 700px;
-            margin: 15px auto;
+        }
+
+        .hero-side {
+            display: flex;
+            justify-content: center;
+        }
+
+        .hero-side-card {
+            width: 100%;
+            max-width: 320px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 22px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .hero-side-card img {
+            width: min(100%, 180px);
+            height: auto;
+            display: block;
+            margin: 0 auto 14px;
+        }
+
+        .hero-side-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .hero-side-text {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* ---------- STATS ---------- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-card.highlight {
+            background: linear-gradient(135deg, #fff4d0 0%, #fff9e8 100%);
+            border-color: #f3df9e;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 34px;
+            font-weight: 800;
+            line-height: 1;
+            color: var(--text);
+        }
+
+        .stat-subtext {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        /* ---------- CONTENT ---------- */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .section-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .section-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .section-title {
+            margin: 0 0 12px;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .section-card p {
+            margin: 0 0 14px;
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--muted);
+        }
+
+        .section-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #fff4cf 0%, #fffaf0 100%);
+            border: 1px solid #f0dd9e;
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin-top: 12px;
+            color: #7a5200;
+            font-weight: 700;
             line-height: 1.6;
         }
-        a.button {
-            display: inline-block;
-            margin: 30px 10px;
-            padding: 12px 25px;
-            background-color: #FFC107;
-            color: #000;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
+
+        .info-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 6px;
         }
-        a.button:hover {
-            background-color: #FFA000;
+
+        .info-item {
+            background: #fafbfc;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            font-size: 15px;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .payment-card {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 22px;
+            align-items: center;
+            background: linear-gradient(135deg, #fff4d0 0%, #fff9e8 100%);
+            border: 1px solid #f3df9e;
+            border-radius: 22px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .payment-copy h2 {
+            margin: 0 0 10px;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .payment-copy p {
+            margin: 0 0 12px;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #5f5f5f;
+        }
+
+        .payment-copy p:last-child {
+            margin-bottom: 0;
+        }
+
+        .payment-image-wrap {
+            text-align: center;
+        }
+
+        .payment-image-wrap img {
+            width: min(100%, 220px);
+            height: auto;
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(16, 24, 40, 0.10);
+            background: white;
+        }
+
+        .payment-note {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #7a5200;
+            font-weight: 700;
+        }
+
+        .prize-card {
+            background: linear-gradient(135deg, var(--maroon) 0%, #992239 100%);
+            color: white;
+            border-radius: 22px;
+            padding: 28px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .prize-label {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            opacity: 0.88;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .prize-value {
+            font-size: 60px;
+            line-height: 1;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .prize-text {
+            font-size: 15px;
+            line-height: 1.6;
+            opacity: 0.92;
+        }
+
+        .button-row {
+            text-align: center;
+            margin-top: 28px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 15px 24px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 800;
+            border-radius: 14px;
+            color: var(--text);
+            background: linear-gradient(135deg, #fff4d0 0%, #fff9e8 100%);
+            border: 1px solid #f3df9e;
+            box-shadow: var(--shadow);
+            transition: transform 0.15s ease;
+        }
+
+        .button:hover {
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 1000px) {
+            .hero-grid,
+            .payment-card,
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 720px) {
+            .navbar {
+                padding: 18px 12px 16px;
+            }
+
+            .navbar img {
+                height: 84px;
+            }
+
+            .nav-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-bar a {
+                border-right: none;
+                border-bottom: 1px solid rgba(255,255,255,0.14);
+            }
+
+            .nav-bar a:last-child {
+                border-bottom: none;
+            }
+
+            .hero {
+                padding: 22px 18px;
+            }
+
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .container {
+                width: 95%;
+                margin-top: 18px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .prize-value {
+                font-size: 46px;
+            }
         }
     </style>
 </head>
 <body>
 
-<img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="width:120px; margin-bottom:20px;">
+    <div class="top-shell">
+        <div class="navbar">
+            <img src="{{ url_for('static', filename='logo_fantasy.png') }}" alt="Logo">
+        </div>
 
-<h1>Fantasy Cricket League</h1>
+        <div class="nav-bar-wrap">
+            <div class="nav-bar">
+                <a href="{{ url_for('index') }}">Home</a>
+                <a href="{{ url_for('how_it_works') }}" class="active">How It Works</a>
+                <a href="{{ url_for('login') }}">Login / Register</a>
+            </div>
+        </div>
+    </div>
 
-<h2>What are We?</h2>
-<p>
-Summer 2026, LCC's women section is running a Fantasy Cricket League for players, friends and family to support the club and follow the section's progress.
-</p>
+    <div class="container">
 
-<p>
-Fantasy cricket is just like any other fantasy league, you'll pick teams at the beginning of every month and if your selected players do well, you'll earn points.
-</p>
+        <div class="hero">
+            <div class="hero-grid">
+                <div>
+                    <div class="eyebrow">LCC Women’s Section Fundraiser</div>
+                    <h1>Fantasy cricket with our own women’s section players.</h1>
+                    <p>
+                        This summer, the women’s section is running a fantasy cricket league for players,
+                        friends, and family. You’ll choose fantasy players from within our own women’s section,
+                        follow their performances across the month, and compete while helping support the club.
+                    </p>
+                </div>
 
-<p>
-The twist is: the players you pick won't be professional players in leagues or tournaments — it will be our very own club players.
-</p>
+                <div class="hero-side">
+                    <div class="hero-side-card">
+                        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+                        <div class="hero-side-title">Summer 2026</div>
+                        <div class="hero-side-text">
+                            A club fundraiser built around our own players, our own fixtures, and our own section.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<h2>How does it Work?</h2>
-<p>
-For summer 2026 there will be 4 drafts that align with the 4 Cricket Leinster starting lists.
-</p>
+        <div class="stats-grid">
+            <div class="stat-card highlight">
+                <div class="stat-label">Drafts</div>
+                <div class="stat-value">4</div>
+                <div class="stat-subtext">One for each Cricket Leinster starring list</div>
+            </div>
 
-<p>
-You will pick 5 players: one from each team in the section and one captain from any team of your choosing.
-</p>
+            <div class="stat-card">
+                <div class="stat-label">Players you Pick Each Month</div>
+                <div class="stat-value">5</div>
+                <div class="stat-subtext">One from each team plus one captain</div>
+            </div>
 
-<h2>How to Join?</h2>
-<p>
-To enter the game you pay a once-off entry fee of €30. This can be Revoluted to Jenny Sparrow (Revtag @jennysparrow). This money will all go to help fund the women's section over the summer.
-</p>
+            <div class="stat-card">
+                <div class="stat-label">Entry Fee</div>
+                <div class="stat-value">€25</div>
+                <div class="stat-subtext">Supports the women’s section fundraiser</div>
+            </div>
 
-<img src="{{ url_for('static', filename='revtag.png') }}" 
-     alt="Revtag Jenny Sparrow" 
-     style="width:200px; margin: 10px auto 20px auto; display:block; border-radius:10px;">
+            <div class="stat-card">
+                <div class="stat-label">Top Prize</div>
+                <div class="stat-value">€250</div>
+                <div class="stat-subtext">Awarded to the fantasy league winner</div>
+            </div>
+        </div>
 
-<p>
-When you sign up you will be asked to provide your full name and phone number.
-</p>
+        <div class="content-grid">
+            <div class="section-card">
+                <h2 class="section-title">What is it?</h2>
+                <p>
+                    The LCC women’s section fantasy league is a summer fundraiser for 2026.
+                    It is open to players, friends, and family who want to support the club
+                    and follow the women’s section throughout the season.
+                </p>
+                <p>
+                    Like any fantasy league, you earn points when your selected players perform well.
+                    The difference here is that your fantasy team is made up of our own club players,
+                    not professionals from outside competitions.
+                </p>
+            </div>
 
-<p>
-You will be added to a private WhatsApp group that will receive two texts per month: <br>
-1. "DRAFT NOW OPEN FOR 1 WEEK"<br>
-2. "DRAFT CLOSING AT MIDNIGHT TONIGHT".
-</p>
+            <div class="section-card">
+                <h2 class="section-title">How does it work?</h2>
+                <p>
+                    There will be four drafts across the summer, aligned with the four Cricket Leinster starring lists.
+                </p>
+                <p>
+                    Each month, you select five players: one from each team in the section and one captain from any team.
+                    Your captain scores double points.
+                </p>
+                <div class="highlight-box">
+                    If you miss the monthly draft window, a random team will be assigned to keep you in the game.
+                </div>
+            </div>
 
-<p>
-This is a reminder to select your team for the next month. If a team is not selected for the month in the draft window, a random team will be assigned to you to keep you in the game.
-</p>
+            <div class="section-card full-width">
+                <h2 class="section-title">How to Join</h2>
+                <div class="payment-card">
+                    <div class="payment-copy">
+                        <h2>Pay €25 to Jenny Sparrow</h2>
+                        <p>
+                            To sign up and start playing, please pay <strong>€25</strong> to <strong>Jenny Sparrow</strong>.
+                        </p>
+                        <p>
+                            This is a once-off entry fee and all money raised goes toward supporting the women’s section over the summer.
+                        </p>
+                        <p>
+                            When you register, you’ll be asked to provide your full name and phone number.
+                        </p>
+                    </div>
 
-<h2>How do I Win?</h2>
-<p>
-Pick the players who earn the most points. There are points for runs, wickets, catches, stumpings, good economies and loads more.
-</p>
+                    <div class="payment-image-wrap">
+                        <img src="{{ url_for('static', filename='revtag.png') }}" alt="Revtag Jenny Sparrow">
+                        <div class="payment-note">Revtag: @jennysparrow</div>
+                    </div>
+                </div>
+            </div>
 
-<p>
-There will be a table of highest point earners published each month.
-</p>
+            <div class="section-card">
+                <h2 class="section-title">Reminders and Updates</h2>
+                <p>
+                    You’ll be added to a private WhatsApp group used only for league reminders.
+                </p>
 
-<p>
-<strong>The winner of the Fantasy League gets €200 prize!</strong>
-</p>
+                <div class="info-list">
+                    <div class="info-item">
+                        1. “DRAFT NOW OPEN FOR 1 WEEK”
+                    </div>
+                    <div class="info-item">
+                        2. “DRAFT CLOSING AT MIDNIGHT TONIGHT”
+                    </div>
+                </div>
+            </div>
 
-<a href="{{ url_for('index') }}" class="button">Back to Home</a>
+            <div class="prize-card">
+                <div class="prize-label">Winner’s Prize</div>
+                <div class="prize-value">€250</div>
+                <div class="prize-text">
+                    Pick the players who score the most points across batting, bowling, fielding, and bonus categories to win the league.
+                </div>
+            </div>
+        </div>
+
+        <div class="button-row">
+            <a href="{{ url_for('index') }}" class="button">Back to Home</a>
+        </div>
+
+    </div>
 
 </body>
 </html>

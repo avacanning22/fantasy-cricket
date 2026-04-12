@@ -1,229 +1,527 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
-    <title>Point Earning Details - {{ round_name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Point Earning Details</title>
 
     <style>
-        body {
-            background-color: #FFF9C4;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
+        * {
+            box-sizing: border-box;
         }
 
-        /* NAVBAR */
+        :root {
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --text: #18212f;
+            --muted: #6b7280;
+            --border: #e7eaf0;
+            --maroon: #7b1020;
+            --maroon-dark: #5f0b18;
+            --gold: #f5c84c;
+            --gold-dark: #e1b534;
+            --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(circle at top left, #fff4cc 0%, #f6f7fb 28%),
+                var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        /* ---------- HEADER ---------- */
+        .top-shell {
+            background: linear-gradient(135deg, var(--maroon) 0%, #90162a 55%, #b11f38 100%);
+            color: white;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        }
+
         .navbar {
-            background-color: #800000; /* maroon */
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 22px 20px 18px;
+        }
+
+        .navbar img {
+            height: 108px;
+            max-width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+        }
+
+        .nav-bar-wrap {
+            background: rgba(255,255,255,0.1);
+            border-top: 1px solid rgba(255,255,255,0.14);
+        }
+
+        .nav-bar {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: 1fr;
+            min-height: 56px;
+        }
+
+        .nav-bar a {
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 16px 12px;
+            border-right: 1px solid rgba(255,255,255,0.14);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .nav-bar a:last-child {
+            border-right: none;
+        }
+
+        .nav-bar a:hover,
+        .nav-bar a.active {
+            background-color: rgba(255,255,255,0.12);
+        }
+
+        /* ---------- PAGE ---------- */
+        .container {
+            width: min(1240px, 94%);
+            margin: 28px auto 40px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #ffffff 0%, #fffaf0 100%);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -60px;
+            top: -60px;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(245,200,76,0.26), rgba(245,200,76,0));
+            pointer-events: none;
+        }
+
+        .hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .hero-copy h1 {
+            margin: 0 0 8px;
+            font-size: 40px;
+            line-height: 1.05;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .hero-copy p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.5;
+            max-width: 760px;
+        }
+
+        /* ---------- STAT CARDS ---------- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            max-width: 320px;
+        }
+
+        .stat-card.highlight {
+            background: linear-gradient(135deg, #fff4d0 0%, #fff9e8 100%);
+            border-color: #f3df9e;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 34px;
+            font-weight: 800;
+            line-height: 1;
+            color: var(--text);
+        }
+
+        .stat-subtext {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        /* ---------- MAIN SECTION ---------- */
+        .section-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 22px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+        .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 20px;
-            color: white;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
         }
 
-        .navbar-left {
-            display: flex;
-            align-items: center;
+        .section-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
         }
 
-        .navbar-left img {
-            height: 50px;
-            margin-right: 15px;
+        .section-header p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 14px;
         }
 
-        .navbar-left .title {
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .navbar-right a {
-            display: inline-block;
-            margin-left: 10px;
-            padding: 8px 18px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #800000; /* maroon text on buttons */
-            background-color: #FFD54F; /* bright yellow */
-            border-radius: 6px;
-            text-decoration: none;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        .navbar-right a:hover {
-            background-color: #FFC107;
-            color: #5A0000;
-        }
-
-        /* Container */
-        .container {
-            width: 95%;
-            margin: auto;
-        }
-
-        h1 {
-            text-align: center;
-            margin-top: 40px;
-            margin-bottom: 40px;
-            font-size: 40px;
-            color: #333;
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 15px;
-            color: #333;
+        /* ---------- TABLE ---------- */
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: white;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
+            min-width: 720px;
         }
 
         th {
-            background-color: #FFD54F;
-            color: #333;
-            text-align: center;
-        }
-
-        td:first-child {
-            width: 70%;
+            background: #f8fafc;
+            color: #475467;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 800;
+            padding: 14px 14px;
+            border-bottom: 1px solid var(--border);
             text-align: left;
-            padding-left: 15px;
         }
 
-        td:last-child {
-            width: 30%;
-            text-align: center;
+        td {
+            padding: 15px 14px;
+            border-bottom: 1px solid #eef1f5;
+            font-size: 14px;
+            color: var(--text);
+            vertical-align: middle;
         }
 
-        tr:hover {
-            background-color: #fff3cd;
+        tbody tr:last-child td {
+            border-bottom: none;
         }
 
-        .panel {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
+        tbody tr:hover {
+            background: #fbfcfe;
         }
 
-        .button {
+        th:nth-child(1),
+        td:nth-child(1) {
+            width: auto;
+        }
+
+        th:nth-child(2),
+        td:nth-child(2) {
+            width: 140px;
+            text-align: right;
+        }
+
+        .rule-name {
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .points-badge {
             display: inline-block;
-            padding: 12px 25px;
-            margin: 10px auto;
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-            background-color: #FFD54F;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #fff4cf 0%, #fffaf0 100%);
+            border: 1px solid #f0dd9e;
+            border-radius: 10px;
+            padding: 7px 10px;
+            font-size: 13px;
+            font-weight: 800;
+            color: #7a5200;
+            min-width: 82px;
+            text-align: center;
+        }
+
+        .back-wrap {
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .back-button {
+            display: inline-block;
             text-decoration: none;
-            text-align: center;
+            background: linear-gradient(135deg, #fff4d0 0%, #fff9e8 100%);
+            color: var(--text);
+            border: 1px solid #f3df9e;
+            border-radius: 14px;
+            padding: 14px 22px;
+            font-size: 14px;
+            font-weight: 800;
+            box-shadow: var(--shadow);
+            transition: transform 0.15s ease, background-color 0.2s ease;
         }
 
-        .button:hover {
-            background-color: #FFC107;
+        .back-button:hover {
+            transform: translateY(-1px);
         }
 
-        .bottom {
-            text-align: center;
-            margin-bottom: 30px;
+        @media (max-width: 960px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-card {
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .navbar {
+                padding: 18px 12px 16px;
+            }
+
+            .navbar img {
+                height: 84px;
+            }
+
+            .nav-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-bar a {
+                border-right: none;
+                border-bottom: 1px solid rgba(255,255,255,0.14);
+            }
+
+            .nav-bar a:last-child {
+                border-bottom: none;
+            }
+
+            .hero {
+                padding: 22px 18px;
+            }
+
+            .hero-copy h1 {
+                font-size: 30px;
+            }
+
+            .container {
+                width: 95%;
+                margin-top: 18px;
+            }
+
+            .section-card,
+            .stat-card {
+                padding: 18px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- NAVBAR -->
-    <div class="navbar">
-        <div class="navbar-left">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
-            <div class="title">LCC Women's Fantasy League</div>
+    <div class="top-shell">
+        <div class="navbar">
+            <img src="{{ url_for('static', filename='logo_fantasy.png') }}" alt="Logo">
         </div>
-        <div class="navbar-right">
-            <a href="{{ url_for('point_earning_details') }}">Point Earning Details</a>
-            <a href="{{ url_for('fixtures') }}">Fixtures</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+
+        <div class="nav-bar-wrap">
+            <div class="nav-bar">
+                {% if navbar_mode == "select" %}
+                    <a href="{{ url_for('select_players') }}">Select Players</a>
+                    <a href="{{ url_for('point_earning_details', from_page='select') }}" class="active">Point Earning Details</a>
+                    <a href="{{ url_for('logout') }}">Logout</a>
+
+                {% elif navbar_mode == "dashboard" %}
+                    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('point_earning_details') }}" class="active">Point Earning Details</a>
+                    <a href="{{ url_for('fixtures') }}">Fixtures</a>
+                    <a href="{{ url_for('logout') }}">Logout</a>
+
+                {% else %}
+                    <a href="{{ url_for('index') }}">Home</a>
+                    <a href="{{ url_for('how_it_works') }}">How It Works</a>
+                    <a href="{{ url_for('login') }}">Login / Register</a>
+                {% endif %}
+            </div>
         </div>
     </div>
 
-    <!-- Container -->
     <div class="container">
 
-        <h1>Point Earning Details</h1>
-
-        <!-- BATTER TABLE -->
-        <div class="panel">
-            <h2>Batting</h2>
-            <table>
-                <tr>
-                    <th></th>
-                    <th>Points</th>
-                </tr>
-                <tr><td>Run</td><td>+1</td></tr>
-                <tr><td>4</td><td>+1</td></tr>
-                <tr><td>6</td><td>+2</td></tr>
-                <tr><td>30+ score</td><td>+4</td></tr>
-                <tr><td>50+ score</td><td>+9</td></tr>
-                <tr><td>100+ score</td><td>+16</td></tr>
-                <tr><td>Strike rate >150 (minimum 6 balls)</td><td>+6</td></tr>
-            </table>
+        <div class="hero">
+            <div class="hero-top">
+                <div class="hero-copy">
+                    <h1>Point Earning Details</h1>
+                    <p>Understand exactly how points are awarded across batting, bowling, fielding, and player multipliers.</p>
+                </div>
+            </div>
         </div>
 
-        <!-- BOWLING TABLE -->
-        <div class="panel">
-            <h2>Bowling</h2>
-            <table>
-                <tr>
-                    <th></th>
-                    <th>Points</th>
-                </tr>
-                <tr><td>Wicket</td><td>+20</td></tr>
-                <tr><td>Maiden</td><td>+12</td></tr>
-                <tr><td>3 wicket haul</td><td>+4</td></tr>
-                <tr><td>4 wicket haul</td><td>+8</td></tr>
-                <tr><td>5+ wicket haul</td><td>+16</td></tr>
-                <tr><td>Bowled/LBW bonus</td><td>+5</td></tr>
-                <tr><td>Economy <5 (minimum 2 overs)</td><td>+6</td></tr>
-            </table>
+        <!-- <div class="stats-grid">
+            <div class="stat-card highlight">
+                <div class="stat-label">Scoring Categories</div>
+                <div class="stat-value">4</div>
+                <div class="stat-subtext">Batting, bowling, fielding, and multipliers</div>
+            </div>
+        </div> -->
+
+        <div class="section-card">
+            <div class="section-header">
+                <div>
+                    <h2>Batting</h2>
+                    <p>Runs, boundaries, milestones, and strike-rate bonuses.</p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rule</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="rule-name">Run</span></td><td><span class="points-badge">+1</span></td></tr>
+                        <tr><td><span class="rule-name">4</span></td><td><span class="points-badge">+1</span></td></tr>
+                        <tr><td><span class="rule-name">6</span></td><td><span class="points-badge">+2</span></td></tr>
+                        <tr><td><span class="rule-name">30+ score</span></td><td><span class="points-badge">+4</span></td></tr>
+                        <tr><td><span class="rule-name">50+ score</span></td><td><span class="points-badge">+9</span></td></tr>
+                        <tr><td><span class="rule-name">100+ score</span></td><td><span class="points-badge">+16</span></td></tr>
+                        <tr><td><span class="rule-name">Strike rate &gt;150 (minimum 6 balls)</span></td><td><span class="points-badge">+6</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- FIELDING TABLE -->
-        <div class="panel">
-            <h2>Fielding</h2>
-            <table>
-                <tr>
-                    <th></th>
-                    <th>Points</th>
-                </tr>
-                <tr><td>Catch</td><td>+8</td></tr>
-                <tr><td>3+ catch bonus</td><td>+4</td></tr>
-                <tr><td>Stumping</td><td>+20</td></tr>
-                <tr><td>Runout</td><td>+8</td></tr>
-            </table>
+        <div class="section-card">
+            <div class="section-header">
+                <div>
+                    <h2>Bowling</h2>
+                    <p>Wickets, maidens, haul bonuses, dismissal bonuses, and economy rewards.</p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rule</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="rule-name">Wicket</span></td><td><span class="points-badge">+20</span></td></tr>
+                        <tr><td><span class="rule-name">Maiden</span></td><td><span class="points-badge">+12</span></td></tr>
+                        <tr><td><span class="rule-name">3 wicket haul</span></td><td><span class="points-badge">+4</span></td></tr>
+                        <tr><td><span class="rule-name">4 wicket haul</span></td><td><span class="points-badge">+8</span></td></tr>
+                        <tr><td><span class="rule-name">5+ wicket haul</span></td><td><span class="points-badge">+16</span></td></tr>
+                        <tr><td><span class="rule-name">Bowled/LBW bonus</span></td><td><span class="points-badge">+5</span></td></tr>
+                        <tr><td><span class="rule-name">Economy &lt;5 (minimum 2 overs)</span></td><td><span class="points-badge">+6</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- MULTIPLIERS TABLE -->
-        <div class="panel">
-            <h2>Multipliers</h2>
-            <table>
-                <tr>
-                    <th></th>
-                    <th>Multiplier</th>
-                </tr>
-                <tr><td>1.1 player</td><td>x1.5</td></tr>
-                <tr><td>Division 4/Unstarred player</td><td>x2</td></tr>
-            </table>
+        <div class="section-card">
+            <div class="section-header">
+                <div>
+                    <h2>Fielding</h2>
+                    <p>Fielding returns from catches, stumpings, and runouts.</p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rule</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="rule-name">Catch</span></td><td><span class="points-badge">+8</span></td></tr>
+                        <tr><td><span class="rule-name">3+ catch bonus</span></td><td><span class="points-badge">+4</span></td></tr>
+                        <tr><td><span class="rule-name">Stumping</span></td><td><span class="points-badge">+20</span></td></tr>
+                        <tr><td><span class="rule-name">Runout</span></td><td><span class="points-badge">+8</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- BACK BUTTON -->
-        <div class="bottom">
-            <a href="{{ url_for('dashboard') }}" class="button">Back to Dashboard</a>
+        <div class="section-card">
+            <div class="section-header">
+                <div>
+                    <h2>Multipliers</h2>
+                    <p>Some players earn boosted returns based on their tier.</p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rule</th>
+                            <th>Multiplier</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="rule-name">1.1 player</span></td><td><span class="points-badge">x1.5</span></td></tr>
+                        <tr><td><span class="rule-name">Division 4/Unstarred player</span></td><td><span class="points-badge">x2</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="back-wrap">
+            <a href="{{ url_for('dashboard') }}" class="back-button">Back to Dashboard</a>
         </div>
 
     </div>

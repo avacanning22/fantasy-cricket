@@ -1,100 +1,366 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy Cricket</title>
+
     <style>
-        body {
-            background-color: #FFF9C4;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+        * {
+            box-sizing: border-box;
         }
 
-        .container {
-            flex: 1;
+        :root {
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --text: #18212f;
+            --muted: #6b7280;
+            --border: #e7eaf0;
+            --maroon: #7b1020;
+            --gold: #f5c84c;
+            --gold-dark: #e1b534;
+            --shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, #fff4cc 0%, #f6f7fb 28%),
+                var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             display: flex;
             flex-direction: column;
+        }
+
+        /* ---------- HEADER ---------- */
+        .top-shell {
+            background: linear-gradient(135deg, var(--maroon) 0%, #90162a 55%, #b11f38 100%);
+            color: white;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        }
+
+        .navbar {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
             align-items: center;
             justify-content: center;
+            padding: 22px 20px 18px;
+        }
+
+        .navbar img {
+            height: 108px;
+            max-width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+        }
+
+        .nav-bar-wrap {
+            background: rgba(255,255,255,0.1);
+            border-top: 1px solid rgba(255,255,255,0.14);
+        }
+
+        .nav-bar {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .nav-bar a {
             text-align: center;
+            text-decoration: none;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 16px 12px;
+            border-right: 1px solid rgba(255,255,255,0.14);
+            transition: background-color 0.2s ease;
         }
 
-        .welcome {
-            font-size: 40px;
-            font-weight: bold;
-            margin-bottom: 5px; /* tight gap */
-            color: #333;
+        .nav-bar a:last-child {
+            border-right: none;
         }
 
-        .title {
-            font-size: 55px;
-            font-weight: bold;
-            margin-top: 0;
-            margin-bottom: 5px; /* tight gap */
-            color: #333;
+        .nav-bar a:hover,
+        .nav-bar a.active {
+            background-color: rgba(255,255,255,0.12);
         }
 
-        .logo {
-            width: 250px; /* bigger logo */
-            margin: 5px 0; /* tight gap */
+        /* ---------- PAGE ---------- */
+        .page {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 18px 48px;
         }
 
-        .buttons {
-            margin-top: 30px; /* space between top section and buttons */
+        .hero-card {
+            width: min(1100px, 96%);
+            background: linear-gradient(135deg, #ffffff 0%, #fffaf0 100%);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hero-card::after {
+            content: "";
+            position: absolute;
+            right: -90px;
+            top: -90px;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(245,200,76,0.24), rgba(245,200,76,0));
+            pointer-events: none;
+        }
+
+        .hero-inner {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 24px;
+            padding: 42px;
+            align-items: center;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            background: #fff3cf;
+            color: #7a5200;
+            border: 1px solid #f3dd95;
+            border-radius: 999px;
+            padding: 9px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+
+        .hero-copy h1 {
+            margin: 0 0 12px;
+            font-size: 54px;
+            line-height: 1.02;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text);
+        }
+
+        .hero-copy p {
+            margin: 0 0 28px;
+            font-size: 17px;
+            line-height: 1.6;
+            color: var(--muted);
+            max-width: 620px;
+        }
+
+        .cta-row {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
         }
 
         .button {
-            display: inline-block;
-            padding: 15px 30px;
-            margin: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            background-color: #FFD54F;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 220px;
+            padding: 15px 22px;
+            border-radius: 14px;
             text-decoration: none;
-            transition: background-color 0.3s;
+            font-size: 15px;
+            font-weight: 800;
+            transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
+            box-shadow: var(--shadow);
         }
 
         .button:hover {
-            background-color: #FFC107;
+            transform: translateY(-1px);
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, var(--gold) 0%, #ffd86c 100%);
+            color: #2d2410;
+            border: 1px solid #efc95d;
+        }
+
+        .button-primary:hover {
+            background: linear-gradient(135deg, var(--gold-dark) 0%, #f6cc5a 100%);
+        }
+
+        .button-secondary {
+            background: #ffffff;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .button-secondary:hover {
+            background: #fafbff;
+        }
+
+        .hero-side {
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         footer {
             text-align: center;
-            padding: 20px;
+            padding: 22px 16px 28px;
             font-size: 14px;
-            color: #555;
+            color: #667085;
+        }
+
+        @media (max-width: 900px) {
+            .hero-inner {
+                grid-template-columns: 1fr;
+                padding: 28px 22px;
+            }
+
+            .hero-copy h1 {
+                font-size: 42px;
+            }
+
+            .hero-side {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .navbar {
+                padding: 18px 12px 16px;
+            }
+
+            .navbar img {
+                height: 84px;
+            }
+
+            .nav-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-bar a {
+                border-right: none;
+                border-bottom: 1px solid rgba(255,255,255,0.14);
+            }
+
+            .nav-bar a:last-child {
+                border-bottom: none;
+            }
+
+            .hero-copy h1 {
+                font-size: 34px;
+            }
+
+            .hero-copy p {
+                font-size: 15px;
+            }
+
+            .button {
+                width: 100%;
+                min-width: 0;
+            }
+        }
+
+        /* ---------- PAYMENT SECTION ---------- */
+        .payment-section {
+            display: flex;
+            justify-content: center;
+            padding: 10px 20px 30px;
+        }
+
+        .payment-card {
+            background: linear-gradient(135deg, #fff4d0 0%, #fff9e8 100%);
+            border: 1px solid #f3df9e;
+            border-radius: 18px;
+            padding: 20px 26px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .payment-title {
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #7a5200;
+            margin-bottom: 8px;
+        }
+
+        .payment-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .payment-subtext {
+            font-size: 14px;
+            color: var(--muted);
         }
     </style>
 </head>
 <body>
 
-<div class="container">
+    <div class="top-shell">
+        <div class="navbar">
+            <img src="{{ url_for('static', filename='logo_fantasy.png') }}" alt="Logo">
+        </div>
 
-    <div class="welcome">Welcome to</div>
-
-    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
-
-    <div class="title">Fantasy League</div>
-
-    <div class="buttons">
-        <a href="{{ url_for('how_it_works') }}" class="button">Information and Game Rules</a>
-        <a href="{{ url_for('login') }}" class="button">Login / Sign Up</a>
+        <div class="nav-bar-wrap">
+            <div class="nav-bar">
+                <a href="{{ url_for('index') }}" class="active">Home</a>
+                <a href="{{ url_for('how_it_works') }}">How It Works</a>
+                <a href="{{ url_for('login') }}">Login / Register</a>
+            </div>
+        </div>
     </div>
 
-</div>
+    <div class="page">
+        <div class="hero-card">
+            <div class="hero-inner">
+                <div class="hero-copy">
+                    <div class="eyebrow">LCC Women’s Section Fundraiser</div>
+                    <h1>Support the women’s section through fantasy cricket.</h1>
+                    <p>
+                        Select your fantasy team from players within our own women’s section, follow their performances
+                        throughout the month, and compete against others in the league.
+                        <br><br>
+                        Every entry helps support the development and growth of women’s cricket at the club.
+                    </p>
 
-<footer>
-    &copy; 2026 Fantasy Cricket League
-</footer>
+                    <div class="cta-row">
+                        <a href="{{ url_for('login') }}" class="button button-primary">Login / Sign Up</a>
+                        <a href="{{ url_for('how_it_works') }}" class="button button-secondary">Information and Game Rules</a>
+                    </div>
+                </div>
+
+                <div class="hero-side"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="payment-section">
+        <div class="payment-card">
+            <div class="payment-title">Entry Fee</div>
+            <div class="payment-text">
+                To join the league, please pay <strong>€25</strong> to <strong>Jenny Sparrow</strong>.
+            </div>
+            <div class="payment-subtext">
+                Once payment is complete, you’re ready to pick your team and start playing!
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 Fantasy Cricket League
+    </footer>
 
 </body>
 </html>

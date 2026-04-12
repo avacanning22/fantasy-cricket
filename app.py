@@ -644,7 +644,15 @@ def select_players():
 
 @app.route("/point_earning_details")
 def point_earning_details():
-    return render_template("point_earning_details.html")
+    if "username" in session:
+        if request.args.get("from_page") == "select":
+            navbar_mode = "select"
+        else:
+            navbar_mode = "dashboard"
+    else:
+        navbar_mode = "public"
+
+    return render_template("point_earning_details.html", navbar_mode=navbar_mode)
 
 # @app.route("/leaderboard")
 # def leaderboard():
@@ -814,4 +822,4 @@ def player_stats(player_name):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True, use_reloader=False, port=5001)
