@@ -50,11 +50,52 @@
             gap: 16px;
         }
 
-        .navbar img {
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .navbar-center {
+            display: flex;
+            justify-content: center;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .navbar img.logo-main {
             height: 108px;
             max-width: 100%;
             object-fit: contain;
             filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+        }
+
+        .sponsor-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 16px;
+            padding: 12px 18px;
+        }
+
+        .sponsor-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .sponsor-box img {
+            height: 60px;
+            width: auto;
+            border-radius: 8px;
+            object-fit: cover;
         }
 
         .nav-bar-wrap {
@@ -362,45 +403,64 @@
         }
 
         @media (max-width: 720px) {
-            .navbar {
-                padding: 18px 12px 16px;
-            }
-
-            .navbar img {
-                height: 84px;
-            }
-
-            .nav-bar {
-                grid-template-columns: 1fr;
-            }
-
-            .nav-bar a {
-                border-right: none;
-                border-bottom: 1px solid rgba(255,255,255,0.14);
-            }
-
-            .nav-bar a:last-child {
-                border-bottom: none;
-            }
-
-            .hero {
-                padding: 22px 18px;
-            }
-
-            .hero-copy h1 {
-                font-size: 30px;
-            }
-
-            .container {
-                width: 95%;
-                margin-top: 18px;
-            }
-
-            .section-card,
-            .stat-card {
-                padding: 18px;
-            }
+        .navbar {
+            padding: 18px 12px 16px;
+            grid-template-columns: 1fr;
+            justify-items: center;
+            gap: 12px;
         }
+
+        .navbar-left {
+            display: none;
+        }
+
+        .navbar-right {
+            justify-content: center;
+        }
+
+        .navbar img.logo-main {
+            height: 84px;
+        }
+
+        .sponsor-box {
+            padding: 10px 14px;
+        }
+
+        .sponsor-box img {
+            height: 52px;
+        }
+
+        .nav-bar {
+            grid-template-columns: 1fr;
+        }
+
+        .nav-bar a {
+            border-right: none;
+            border-bottom: 1px solid rgba(255,255,255,0.14);
+        }
+
+        .nav-bar a:last-child {
+            border-bottom: none;
+        }
+
+        .hero {
+            padding: 22px 18px;
+        }
+
+        .hero-copy h1 {
+            font-size: 30px;
+        }
+
+        .container {
+            width: 95%;
+            margin-top: 18px;
+        }
+
+        .section-card,
+        .stat-card {
+            padding: 18px;
+        }
+    }
     </style>
 </head>
 <body>
