@@ -585,11 +585,16 @@ def select_players():
 
         for i, slot in enumerate(["p1", "p2", "p3", "p4", "pw"]):
             col = f"{active_round}{slot}"
+
             if col not in picks_df.columns:
-                picks_df[col] = None
-            picks_df.loc[picks_df["username"] == username, col] = selected_players[i]
+                picks_df[col] = pd.Series("", index=picks_df.index, dtype="object")
+            else:
+                picks_df[col] = picks_df[col].astype("object")
+
+            picks_df.loc[picks_df["username"] == username, col] = str(selected_players[i])
 
         save_picks(picks_df)
+
         total_score = update_team_score(username, active_round)
         flash(f"Your picks have been saved! Current score: {total_score}", "success")
         return redirect(url_for("dashboard"))
