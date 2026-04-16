@@ -374,6 +374,7 @@ def admin_dashboard():
 
     picks_df = normalize_username_column(load_picks())
     users_df = normalize_username_column(load_users())
+    players_df = load_players()
     current_round = get_active_round()
     months = ["May", "June", "July", "August"]
 
@@ -412,7 +413,7 @@ def admin_dashboard():
                     current_month_index = months.index(last_month_name)
 
             next_index = (current_month_index + 1) % len(months)
-            next_round_name = f"{months[next_index]}2025"
+            next_round_name = f"{months[next_index]}2026"
 
             if last_round:
                 picks_df = normalize_username_column(load_picks())
@@ -470,6 +471,7 @@ def admin_dashboard():
         "admin_dashboard.html",
         picks=picks_df.to_dict(orient="records"),
         users=users_df.to_dict(orient="records"),
+        players=players_df.to_dict(orient="records"),
         current_round=current_round
     )
 
@@ -668,7 +670,7 @@ def player_stats(player_name):
 
     allowed_teams = {"Leinster W1", "Leinster W2", "Leinster W3"}
 
-    runreport_url = f"https://www2.cricketstatz.com/ss/linkreport?mode=53&playerid={row['Player No']}&club=4537&season=2025&grade=0&pool="
+    runreport_url = f"https://www2.cricketstatz.com/ss/linkreport?mode=53&playerid={row['Player No']}&club=4537&season=2026&grade=0&pool="
     rr_resp = requests.get(runreport_url, headers=headers)
     df_matches = pd.DataFrame()
 
@@ -704,7 +706,7 @@ def player_stats(player_name):
                 df_matches["Economy"] = None
 
     howout_report_url = (
-        f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1&bowlerid={row['Player No']}&club=4536&oppclub=4537&season=2025&grade=0&pool="
+        f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1&bowlerid={row['Player No']}&club=4536&oppclub=4537&season=2026&grade=0&pool="
     )
     ho_resp = requests.get(howout_report_url, headers=headers)
     howout_counts = pd.DataFrame(columns=["How Out", "Count"])
@@ -723,7 +725,7 @@ def player_stats(player_name):
                 howout_counts = pd.Series(howout_list).value_counts().reset_index()
                 howout_counts.columns = ["How Out", "Count"]
 
-    batting_report_url = f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1&playerid={row['Player No']}&club=4537&season=2025&grade=0&pool="
+    batting_report_url = f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1&playerid={row['Player No']}&club=4537&season=2026&grade=0&pool="
     bat_resp = requests.get(batting_report_url, headers=headers)
     df_batting = pd.DataFrame()
 

@@ -127,6 +127,30 @@
     </div>
 
     <div class="section">
+        <h2>Players</h2>
+
+        {% if players %}
+            <table>
+                <tr>
+                    {% for col in players[0].keys() %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+
+                {% for player in players %}
+                <tr>
+                    {% for val in player.values() %}
+                        <td>{{ val }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <div class="empty-message">No players found.</div>
+        {% endif %}
+    </div>
+
+    <div class="section">
         <h2>Competition Control</h2>
 
         {% if current_round %}
