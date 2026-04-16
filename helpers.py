@@ -430,7 +430,7 @@ def calculate_all_player_scores(period_name):
         try:
             runreport_url = (
                 f"https://www2.cricketstatz.com/ss/linkreport?mode=53"
-                f"&playerid={player_id}&club=4537&season=2025&grade=0&pool="
+                f"&playerid={player_id}&club=4537&season=2026&grade=0&pool="
             )
             try:
                 rr_resp = requests.get(runreport_url, headers=headers, timeout=10)
@@ -473,7 +473,7 @@ def calculate_all_player_scores(period_name):
 
             howout_url = (
                 f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1"
-                f"&bowlerid={player_id}&club=4536&oppclub=4537&season=2025&grade=0&pool="
+                f"&bowlerid={player_id}&club=4536&oppclub=4537&season=2026&grade=0&pool="
             )
             try:
                 ho_resp = requests.get(howout_url, headers=headers, timeout=10)
@@ -495,7 +495,7 @@ def calculate_all_player_scores(period_name):
 
             batting_url = (
                 f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1"
-                f"&playerid={player_id}&club=4537&season=2025&grade=0&pool="
+                f"&playerid={player_id}&club=4537&season=2026&grade=0&pool="
             )
             try:
                 bat_resp = requests.get(batting_url, headers=headers, timeout=10)
@@ -697,3 +697,56 @@ def seed_data_from_repo():
             print(f"Missing seed file: {src}")
         else:
             print(f"Skipped existing file: {dst}")
+
+
+
+def write_players_to_seed_from_starrings():
+    df = build_players_df_from_starrings()
+    write_players_to_seed(df)
+    return df
+
+def write_players_to_seed(df):
+    """
+    Overwrites seed_data/players.xlsx with the given DataFrame.
+    """
+    seed_path = os.path.join("seed_data", "players.xlsx")
+
+    if df is None or df.empty:
+        raise ValueError("Cannot write empty DataFrame to players.xlsx")
+
+    try:
+        df.to_excel(seed_path, index=False)
+    except Exception as e:
+        print("Error writing to seed players.xlsx:", e)
+        raise
+
+def build_players_df_from_starrings():
+    """
+    Ensure players.xlsx contains one row for every player in starrings.
+    Keeps existing player data where possible and adds missing players.
+    """
+    starrings_df = load_starrings_df().copy()
+    players_df = load_players().copy()
+
+    starrings_df["Player"] = starrings_df["Player"].astype(str).str.strip()
+    players_df["Player"] = players_df["Player"].astype(str).str.strip()
+
+    starrings_df = starrings_df.drop_duplicates(subset=["Player"])
+
+    if "starrings" in starrings_df.columns:
+        base_players = starrings_df[["Player", "starrings"]].copy()
+    else:
+        base_players = starrings_df[["Player"]].copy()
+
+    merged_df = base_players.merge(
+        players_df,
+        on="Player",
+        how="left",
+        suffixes=("", "_old")
+    )
+
+    if "starrings_old" in merged_df.columns:
+        merged_df["starrings"] = merged_df["starrings"].combine_first(merged_df["starrings_old"])
+        merged_df = merged_df.drop(columns=["starrings_old"])
+
+    return merged_df
