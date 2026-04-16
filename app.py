@@ -18,7 +18,11 @@ from helpers import (
     update_team_score, team_already_exists,
     calculate_all_player_scores, read_fixtures,
     generate_random_team, get_all_rounds_for_user,
-    load_starrings_df, write_players_to_seed_from_starrings
+    load_starrings_df,
+    write_players_to_seed_from_starrings,
+    reload_players_from_seed,
+    save_players,
+    write_players_to_seed,
 )
 
 seed_data_from_repo()
@@ -372,16 +376,6 @@ def admin_dashboard():
         flash("Admin access required!", "danger")
         return redirect(url_for("login"))
 
-    write_players_to_seed_from_starrings()
-
-    def overwrite_players_from_seed():
-        import shutil
-        seed_players = os.path.join("seed_data", "players.xlsx")
-        if not os.path.exists(seed_players):
-            raise FileNotFoundError("seed_data/players.xlsx not found")
-        shutil.copy2(seed_players, PLAYERS_FILE)
-
-
     picks_df = normalize_username_column(load_picks())
     users_df = normalize_username_column(load_users())
     players_df = load_players()
@@ -393,15 +387,34 @@ def admin_dashboard():
 
         if action == "reload_players_from_seed":
             try:
-                overwrite_players_from_seed()
+                reload_players_from_seed()
                 players_df = load_players()
-                flash("players.xlsx overwritten from seed_data.", "success")
+                flash("players.xlsx overwritten from persistent seed.", "success")
             except Exception as e:
                 print("Error overwriting players.xlsx:", e)
                 flash("Could not overwrite players.xlsx.", "danger")
             return redirect(url_for("admin_dashboard"))
 
-        if action == "close_round":
+        elif action == "save_players_to_seed":
+            try:
+                players_df = load_players()
+                write_players_to_seed(players_df)
+                flash("Current live players.xlsx saved to persistent seed.", "success")
+            except Exception as e:
+                print("Error saving players to persistent seed:", e)
+                flash("Could not save players to persistent seed.", "danger")
+            return redirect(url_for("admin_dashboard"))
+
+        elif action == "sync_players_seed_from_starrings":
+            try:
+                write_players_to_seed_from_starrings()
+                flash("Persistent seed players file synced from starrings.", "success")
+            except Exception as e:
+                print("Error syncing persistent seed players file:", e)
+                flash("Could not sync persistent seed players file.", "danger")
+            return redirect(url_for("admin_dashboard"))
+
+        elif action == "close_round":
             if current_round:
                 latest_cols = ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
                 round_cols = [f"{current_round}p{i}" for i in range(1, 5)] + [f"{current_round}pw"]
@@ -472,6 +485,8 @@ def admin_dashboard():
                 set_active_round("")
 
             picks_df = normalize_username_column(load_picks())
+            players_df = load_players()
+
             round_cols = [f"{next_round_name}p{i}" for i in range(1, 5)] + [f"{next_round_name}pw"]
 
             for col in round_cols:
@@ -481,6 +496,11 @@ def admin_dashboard():
             score_col = f"{next_round_name}_score"
             if score_col not in picks_df.columns:
                 picks_df[score_col] = 0
+
+            player_score_col = f"{next_round_name}_score"
+            if players_df is not None and player_score_col not in players_df.columns:
+                players_df[player_score_col] = 0
+                save_players(players_df)
 
             save_picks(picks_df)
             set_active_round(next_round_name)

@@ -34,6 +34,9 @@ STARRINGS_FILE = str(DATA_DIR / "starrings.xlsx")
 PLAYERS_FILE = str(DATA_DIR / "players.xlsx")
 FIXTURES_FILE = str(DATA_DIR / "fixtures.xlsx")
 
+# Persistent runtime-editable seed file for players
+SEED_PLAYERS_FILE = str(DATA_DIR / "seed_players.xlsx")
+
 
 # =========================================================
 # Internal helpers
@@ -200,6 +203,30 @@ def load_players():
     )
 
 
+def save_players(df):
+    _atomic_write_excel(df, PLAYERS_FILE)
+
+
+def load_seed_players():
+    return _read_excel_or_empty(
+        SEED_PLAYERS_FILE,
+        ["Player No", "Player", "Team", "Stats Link", "starrings"]
+    )
+
+
+def save_seed_players(df):
+    _atomic_write_excel(df, SEED_PLAYERS_FILE)
+
+
+def reload_players_from_seed():
+    """
+    Overwrite live players file from the persistent runtime seed file.
+    """
+    if not os.path.exists(SEED_PLAYERS_FILE):
+        raise FileNotFoundError(f"{SEED_PLAYERS_FILE} not found")
+    shutil.copy2(SEED_PLAYERS_FILE, PLAYERS_FILE)
+
+
 # =========================================================
 # Rounds
 # =========================================================
@@ -338,7 +365,6 @@ def read_fixtures(file_path=None):
         else:
             fp = Path(file_path)
             if not fp.is_absolute():
-                # Prefer persistent data dir first
                 data_candidate = DATA_DIR / file_path
                 file_path = str(data_candidate if data_candidate.exists() else (BASE_DIR / file_path))
 
@@ -671,6 +697,7 @@ def get_all_rounds_for_user(username):
 def seed_data_from_repo():
     """
     Copies initial seed files into persistent DATA_DIR if they do not already exist.
+    Also creates a persistent runtime seed players file.
     """
     seed_dir = BASE_DIR / "seed_data"
 
@@ -679,6 +706,7 @@ def seed_data_from_repo():
         (seed_dir / "picks.xlsx", PICKS_FILE),
         (seed_dir / "starrings.xlsx", STARRINGS_FILE),
         (seed_dir / "players.xlsx", PLAYERS_FILE),
+        (seed_dir / "players.xlsx", SEED_PLAYERS_FILE),
         (seed_dir / "active_round.txt", ACTIVE_ROUND_FILE),
         (seed_dir / "last_round.txt", LAST_ROUND_FILE),
         (seed_dir / "fixtures.xlsx", FIXTURES_FILE),
@@ -699,38 +727,35 @@ def seed_data_from_repo():
             print(f"Skipped existing file: {dst}")
 
 
-
 def write_players_to_seed_from_starrings():
     df = build_players_df_from_starrings()
     write_players_to_seed(df)
     return df
 
+
 def write_players_to_seed(df):
     """
-    Overwrites seed_data/players.xlsx with the given DataFrame.
+    Overwrites the persistent runtime seed players file.
     """
-    seed_path = os.path.join("seed_data", "players.xlsx")
-
     if df is None or df.empty:
-        raise ValueError("Cannot write empty DataFrame to players.xlsx")
+        raise ValueError("Cannot write empty DataFrame to seed players file")
+    _atomic_write_excel(df, SEED_PLAYERS_FILE)
 
-    try:
-        df.to_excel(seed_path, index=False)
-    except Exception as e:
-        print("Error writing to seed players.xlsx:", e)
-        raise
 
 def build_players_df_from_starrings():
     """
-    Ensure players.xlsx contains one row for every player in starrings.
-    Keeps existing player data where possible and adds missing players.
+    Ensure the seed players file contains one row for every player in starrings.
+    Keeps existing seed player data where possible and adds missing players.
     """
     starrings_df = load_starrings_df().copy()
-    players_df = load_players().copy()
+    seed_players_df = load_seed_players().copy()
 
     starrings_df["Player"] = starrings_df["Player"].astype(str).str.strip()
-    players_df["Player"] = players_df["Player"].astype(str).str.strip()
 
+    if "Player" not in seed_players_df.columns:
+        seed_players_df["Player"] = ""
+
+    seed_players_df["Player"] = seed_players_df["Player"].astype(str).str.strip()
     starrings_df = starrings_df.drop_duplicates(subset=["Player"])
 
     if "starrings" in starrings_df.columns:
@@ -739,7 +764,7 @@ def build_players_df_from_starrings():
         base_players = starrings_df[["Player"]].copy()
 
     merged_df = base_players.merge(
-        players_df,
+        seed_players_df,
         on="Player",
         how="left",
         suffixes=("", "_old")
