@@ -18,7 +18,7 @@ from helpers import (
     update_team_score, team_already_exists,
     calculate_all_player_scores, read_fixtures,
     generate_random_team, get_all_rounds_for_user,
-    load_starrings_df
+    load_starrings_df, write_players_to_seed_from_starrings
 )
 
 seed_data_from_repo()
@@ -372,6 +372,16 @@ def admin_dashboard():
         flash("Admin access required!", "danger")
         return redirect(url_for("login"))
 
+    write_players_to_seed_from_starrings()
+
+    def overwrite_players_from_seed():
+        import shutil
+        seed_players = os.path.join("seed_data", "players.xlsx")
+        if not os.path.exists(seed_players):
+            raise FileNotFoundError("seed_data/players.xlsx not found")
+        shutil.copy2(seed_players, PLAYERS_FILE)
+
+
     picks_df = normalize_username_column(load_picks())
     users_df = normalize_username_column(load_users())
     players_df = load_players()
@@ -380,6 +390,16 @@ def admin_dashboard():
 
     if request.method == "POST":
         action = request.form.get("action")
+
+        if action == "reload_players_from_seed":
+            try:
+                overwrite_players_from_seed()
+                players_df = load_players()
+                flash("players.xlsx overwritten from seed_data.", "success")
+            except Exception as e:
+                print("Error overwriting players.xlsx:", e)
+                flash("Could not overwrite players.xlsx.", "danger")
+            return redirect(url_for("admin_dashboard"))
 
         if action == "close_round":
             if current_round:
@@ -471,7 +491,7 @@ def admin_dashboard():
         "admin_dashboard.html",
         picks=picks_df.to_dict(orient="records"),
         users=users_df.to_dict(orient="records"),
-        players=players_df.to_dict(orient="records"),
+        players=players_df.to_dict(orient="records") if players_df is not None else [],
         current_round=current_round
     )
 
