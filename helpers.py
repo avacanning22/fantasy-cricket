@@ -727,51 +727,122 @@ def seed_data_from_repo():
             print(f"Skipped existing file: {dst}")
 
 
+def build_players_df_from_starrings():
+    starrings_df = load_starrings_df().copy()
+    players_df = load_players().copy()
+
+    starrings_df["Player"] = starrings_df["Player"].astype(str).str.strip()
+    players_df["Player"] = players_df["Player"].astype(str).str.strip()
+
+    starrings_df = starrings_df.drop_duplicates(subset=["Player"])
+
+    # Keep ONLY players that are in starrings
+    players_df = players_df[players_df["Player"].isin(starrings_df["Player"])]
+
+    # Add missing players
+    missing_players = starrings_df[~starrings_df["Player"].isin(players_df["Player"])]
+
+    if not missing_players.empty:
+        new_rows = pd.DataFrame({
+            "Player No": None,
+            "Player": missing_players["Player"],
+            "Team": None,
+            "Stats Link": None,
+            "starrings": missing_players["starrings"]
+        })
+        players_df = pd.concat([players_df, new_rows], ignore_index=True)
+
+    # Update starrings values
+    players_df = players_df.drop(columns=["starrings"], errors="ignore")
+    players_df = players_df.merge(starrings_df, on="Player", how="left")
+
+    return players_df
+
+def save_uploaded_starrings_file(upload_file):
+    """
+    Save an uploaded Excel file as the persistent starrings.xlsx file.
+    """
+    if upload_file is None or not getattr(upload_file, "filename", ""):
+        raise ValueError("No file uploaded")
+
+    filename = upload_file.filename.lower()
+    if not filename.endswith(".xlsx"):
+        raise ValueError("Only .xlsx files are allowed for starrings")
+
+    df = pd.read_excel(upload_file)
+
+    if df is None or df.empty:
+        raise ValueError("Uploaded starrings file is empty")
+
+    _atomic_write_excel(df, STARRINGS_FILE)
+    return df
+
+def write_players_to_seed(df):
+    """
+    Overwrite the persistent runtime seed players file.
+    """
+    if df is None or df.empty:
+        raise ValueError("Cannot write empty DataFrame to seed players file")
+
+    _atomic_write_excel(df, SEED_PLAYERS_FILE)
+
+
 def write_players_to_seed_from_starrings():
     df = build_players_df_from_starrings()
     write_players_to_seed(df)
     return df
 
 
-def write_players_to_seed(df):
+def sync_live_players_from_starrings():
     """
-    Overwrites the persistent runtime seed players file.
-    """
-    if df is None or df.empty:
-        raise ValueError("Cannot write empty DataFrame to seed players file")
-    _atomic_write_excel(df, SEED_PLAYERS_FILE)
-
-
-def build_players_df_from_starrings():
-    """
-    Ensure the seed players file contains one row for every player in starrings.
-    Keeps existing seed player data where possible and adds missing players.
+    Rebuild live players.xlsx from current starrings:
+    - remove players not in starrings
+    - keep existing metadata for players that remain
+    - add new players from starrings
+    - overwrite starrings values from starrings.xlsx
     """
     starrings_df = load_starrings_df().copy()
-    seed_players_df = load_seed_players().copy()
+    players_df = load_players().copy()
+
+    if starrings_df.empty:
+        raise ValueError("starrings.xlsx is empty")
 
     starrings_df["Player"] = starrings_df["Player"].astype(str).str.strip()
+    players_df["Player"] = players_df["Player"].astype(str).str.strip()
 
-    if "Player" not in seed_players_df.columns:
-        seed_players_df["Player"] = ""
-
-    seed_players_df["Player"] = seed_players_df["Player"].astype(str).str.strip()
     starrings_df = starrings_df.drop_duplicates(subset=["Player"])
+    starrings_players = set(starrings_df["Player"].tolist())
 
-    if "starrings" in starrings_df.columns:
-        base_players = starrings_df[["Player", "starrings"]].copy()
-    else:
-        base_players = starrings_df[["Player"]].copy()
+    # 1) keep only players that still exist in starrings
+    players_df = players_df[players_df["Player"].isin(starrings_players)].copy()
 
-    merged_df = base_players.merge(
-        seed_players_df,
-        on="Player",
-        how="left",
-        suffixes=("", "_old")
-    )
+    # 2) add any new players from starrings
+    existing_players = set(players_df["Player"].tolist())
+    missing_players = starrings_df[~starrings_df["Player"].isin(existing_players)]
 
-    if "starrings_old" in merged_df.columns:
-        merged_df["starrings"] = merged_df["starrings"].combine_first(merged_df["starrings_old"])
-        merged_df = merged_df.drop(columns=["starrings_old"])
+    if not missing_players.empty:
+        new_rows = pd.DataFrame({
+            "Player No": None,
+            "Player": missing_players["Player"].tolist(),
+            "Team": None,
+            "Stats Link": None,
+            "starrings": missing_players["starrings"].tolist(),
+        })
 
-    return merged_df
+        # preserve any extra columns already in players_df
+        for col in players_df.columns:
+            if col not in new_rows.columns:
+                new_rows[col] = None
+
+        new_rows = new_rows[players_df.columns]
+        players_df = pd.concat([players_df, new_rows], ignore_index=True)
+
+    # 3) overwrite starrings values from starrings.xlsx
+    starrings_map = starrings_df.set_index("Player")["starrings"].to_dict()
+    players_df["starrings"] = players_df["Player"].map(starrings_map)
+
+    # optional: sort for neatness
+    players_df = players_df.sort_values("Player").reset_index(drop=True)
+
+    save_players(players_df)
+    return players_df

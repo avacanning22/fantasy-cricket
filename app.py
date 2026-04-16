@@ -23,6 +23,8 @@ from helpers import (
     reload_players_from_seed,
     save_players,
     write_players_to_seed,
+    save_uploaded_starrings_file,
+    sync_live_players_from_starrings,
 )
 
 seed_data_from_repo()
@@ -385,7 +387,17 @@ def admin_dashboard():
     if request.method == "POST":
         action = request.form.get("action")
 
-        if action == "reload_players_from_seed":
+        if action == "upload_starrings":
+            try:
+                upload_file = request.files.get("upload_file")
+                save_uploaded_starrings_file(upload_file)
+                flash("Starrings file uploaded successfully.", "success")
+            except Exception as e:
+                print("Error uploading starrings file:", e)
+                flash("Could not upload starrings file.", "danger")
+            return redirect(url_for("admin_dashboard"))
+
+        elif action == "reload_players_from_seed":
             try:
                 reload_players_from_seed()
                 players_df = load_players()
@@ -403,6 +415,15 @@ def admin_dashboard():
             except Exception as e:
                 print("Error saving players to persistent seed:", e)
                 flash("Could not save players to persistent seed.", "danger")
+            return redirect(url_for("admin_dashboard"))
+
+        elif action == "sync_live_players_from_starrings":
+            try:
+                players_df = sync_live_players_from_starrings()
+                flash("Live players.xlsx synced from starrings.", "success")
+            except Exception as e:
+                print("Error syncing live players from starrings:", e)
+                flash("Could not sync live players from starrings.", "danger")
             return redirect(url_for("admin_dashboard"))
 
         elif action == "sync_players_seed_from_starrings":
@@ -498,7 +519,7 @@ def admin_dashboard():
                 picks_df[score_col] = 0
 
             player_score_col = f"{next_round_name}_score"
-            if players_df is not None and player_score_col not in players_df.columns:
+            if players_df is not None:
                 players_df[player_score_col] = 0
                 save_players(players_df)
 

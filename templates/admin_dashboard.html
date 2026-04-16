@@ -127,6 +127,17 @@
     </div>
 
     <div class="section">
+        <h2>Upload Starrings</h2>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="upload_file" accept=".xlsx">
+            <br>
+            <button class="button" type="submit" name="action" value="upload_starrings">
+                Upload Starrings File
+            </button>
+        </form>
+    </div>
+
+    <div class="section">
         <h2>Players</h2>
 
         {% if players %}
@@ -157,6 +168,12 @@
             </button>
         </form>
     </div>
+
+    <form method="POST">
+        <button class="button" name="action" value="sync_live_players_from_starrings">
+            Sync Live Players from Starrings
+        </button>
+    </form>
 
     <div class="section">
         <h2>Competition Control</h2>
