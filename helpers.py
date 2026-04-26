@@ -276,10 +276,9 @@ def save_seed_players(df):
 
 def reload_players_from_seed():
     """
-    Update live players.xlsx from seed_players.xlsx:
-    - update matching players
-    - add players that exist in seed but not live
-    - keep players that exist in live but not seed
+    Keep the current live players list.
+    For each matching Player, copy Player No, Team, and Stats Link from seed_players.xlsx.
+    Does not remove or add players.
     """
     if not os.path.exists(SEED_PLAYERS_FILE):
         raise FileNotFoundError(f"{SEED_PLAYERS_FILE} not found")
@@ -287,49 +286,37 @@ def reload_players_from_seed():
     live_df = load_players().copy()
     seed_df = load_seed_players().copy()
 
+    if live_df.empty:
+        raise ValueError("players.xlsx is empty")
     if seed_df.empty:
         raise ValueError("seed_players.xlsx is empty")
 
     key_col = "Player"
+    cols_to_update = ["Player No", "Team", "Stats Link"]
 
     live_df[key_col] = live_df[key_col].astype(str).str.strip()
     seed_df[key_col] = seed_df[key_col].astype(str).str.strip()
 
-    seed_df = seed_df[seed_df[key_col].notna() & (seed_df[key_col] != "") & (seed_df[key_col].str.lower() != "nan")]
-    live_df = live_df[live_df[key_col].notna() & (live_df[key_col] != "") & (live_df[key_col].str.lower() != "nan")]
-
     seed_df = seed_df.drop_duplicates(subset=[key_col], keep="last")
-    live_df = live_df.drop_duplicates(subset=[key_col], keep="last")
 
-    # Make both files have the same columns
-    for col in seed_df.columns:
+    for col in cols_to_update:
         if col not in live_df.columns:
             live_df[col] = None
-
-    for col in live_df.columns:
         if col not in seed_df.columns:
-            seed_df[col] = None
+            raise ValueError(f"Seed players file is missing column: {col}")
 
-    live_df = live_df.set_index(key_col)
-    seed_df = seed_df.set_index(key_col)
+    seed_lookup = seed_df.set_index(key_col)
 
-    # Update matching players only
-    matching_players = live_df.index.intersection(seed_df.index)
+    for idx, row in live_df.iterrows():
+        player = row[key_col]
 
-    for player in matching_players:
-        for col in seed_df.columns:
-            value = seed_df.at[player, col]
-            if pd.notna(value) and value != "":
-                live_df.at[player, col] = value
+        if player in seed_lookup.index:
+            for col in cols_to_update:
+                value = seed_lookup.at[player, col]
 
-    # Add players that are in seed but missing from live
-    missing_from_live = seed_df.index.difference(live_df.index)
-
-    if len(missing_from_live) > 0:
-        live_df = pd.concat([live_df, seed_df.loc[missing_from_live]], axis=0)
-
-    live_df = live_df.reset_index()
-    live_df = live_df.sort_values("Player").reset_index(drop=True)
+                # Only overwrite if seed has an actual value
+                if pd.notna(value) and str(value).strip() != "":
+                    live_df.at[idx, col] = value
 
     save_players(live_df)
     return live_df
