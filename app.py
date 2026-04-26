@@ -25,6 +25,7 @@ from helpers import (
     write_players_to_seed,
     save_uploaded_starrings_file,
     sync_live_players_from_starrings,
+    force_update_seed_players_from_repo,
 )
 
 seed_data_from_repo()
@@ -405,6 +406,15 @@ def admin_dashboard():
             except Exception as e:
                 print("Error overwriting players.xlsx:", e)
                 flash("Could not overwrite players.xlsx.", "danger")
+            return redirect(url_for("admin_dashboard"))
+
+        elif action == "force_update_seed_players_from_repo":
+            try:
+                force_update_seed_players_from_repo()
+                flash("Persistent seed_players.xlsx updated from repo seed_data/players.xlsx.", "success")
+            except Exception as e:
+                print("Error updating persistent seed from repo:", e)
+                flash("Could not update persistent seed from repo.", "danger")
             return redirect(url_for("admin_dashboard"))
 
         elif action == "save_players_to_seed":

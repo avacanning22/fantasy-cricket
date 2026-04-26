@@ -321,7 +321,20 @@ def reload_players_from_seed():
     save_players(live_df)
     return live_df
 
+def force_update_seed_players_from_repo():
+    """
+    Force-copy seed_data/players.xlsx from the deployed repo
+    onto the persistent disk as seed_players.xlsx.
+    """
+    repo_seed_players = BASE_DIR / "seed_data" / "players.xlsx"
 
+    if not repo_seed_players.exists():
+        raise FileNotFoundError(f"Repo seed players file not found: {repo_seed_players}")
+
+    _ensure_parent_dir(SEED_PLAYERS_FILE)
+    shutil.copy2(repo_seed_players, SEED_PLAYERS_FILE)
+
+    return load_seed_players()
 
 
 
