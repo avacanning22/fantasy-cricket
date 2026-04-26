@@ -218,14 +218,61 @@ def save_seed_players(df):
     _atomic_write_excel(df, SEED_PLAYERS_FILE)
 
 
+# def reload_players_from_seed():
+#     """
+#     Overwrite live players file from the persistent runtime seed file.
+#     """
+#     if not os.path.exists(SEED_PLAYERS_FILE):
+#         raise FileNotFoundError(f"{SEED_PLAYERS_FILE} not found")
+#     shutil.copy2(SEED_PLAYERS_FILE, PLAYERS_FILE)
 def reload_players_from_seed():
     """
-    Overwrite live players file from the persistent runtime seed file.
+    Update live players.xlsx from seed_players.xlsx for matching players only.
+    Keeps live-only players and live-only columns.
+    Adds seed columns if missing.
     """
     if not os.path.exists(SEED_PLAYERS_FILE):
         raise FileNotFoundError(f"{SEED_PLAYERS_FILE} not found")
-    shutil.copy2(SEED_PLAYERS_FILE, PLAYERS_FILE)
 
+    live_df = load_players().copy()
+    seed_df = load_seed_players().copy()
+
+    if seed_df.empty:
+        raise ValueError("seed_players.xlsx is empty")
+
+    key_col = "Player No"
+
+    if key_col not in live_df.columns or key_col not in seed_df.columns:
+        key_col = "Player"
+
+    live_df[key_col] = live_df[key_col].astype(str).str.strip()
+    seed_df[key_col] = seed_df[key_col].astype(str).str.strip()
+
+    # Remove blank keys
+    live_df = live_df[live_df[key_col].notna() & (live_df[key_col] != "")]
+    seed_df = seed_df[seed_df[key_col].notna() & (seed_df[key_col] != "")]
+
+    # Avoid duplicate seed rows causing update problems
+    seed_df = seed_df.drop_duplicates(subset=[key_col], keep="last")
+
+    # Add any seed columns missing from live file
+    for col in seed_df.columns:
+        if col not in live_df.columns:
+            live_df[col] = None
+
+    live_df = live_df.set_index(key_col)
+    seed_df = seed_df.set_index(key_col)
+
+    matching_players = live_df.index.intersection(seed_df.index)
+
+    for player_key in matching_players:
+        for col in seed_df.columns:
+            live_df.at[player_key, col] = seed_df.at[player_key, col]
+
+    live_df = live_df.reset_index()
+
+    save_players(live_df)
+    return live_df
 
 # =========================================================
 # Rounds
