@@ -225,11 +225,61 @@ def save_seed_players(df):
 #     if not os.path.exists(SEED_PLAYERS_FILE):
 #         raise FileNotFoundError(f"{SEED_PLAYERS_FILE} not found")
 #     shutil.copy2(SEED_PLAYERS_FILE, PLAYERS_FILE)
+# def reload_players_from_seed():
+#     """
+#     Update live players.xlsx from seed_players.xlsx for matching players only.
+#     Keeps live-only players and live-only columns.
+#     Adds seed columns if missing.
+#     """
+#     if not os.path.exists(SEED_PLAYERS_FILE):
+#         raise FileNotFoundError(f"{SEED_PLAYERS_FILE} not found")
+
+#     live_df = load_players().copy()
+#     seed_df = load_seed_players().copy()
+
+#     if seed_df.empty:
+#         raise ValueError("seed_players.xlsx is empty")
+
+#     key_col = "Player No"
+
+#     if key_col not in live_df.columns or key_col not in seed_df.columns:
+#         key_col = "Player"
+
+#     live_df[key_col] = live_df[key_col].astype(str).str.strip()
+#     seed_df[key_col] = seed_df[key_col].astype(str).str.strip()
+
+#     # Remove blank keys
+#     live_df = live_df[live_df[key_col].notna() & (live_df[key_col] != "")]
+#     seed_df = seed_df[seed_df[key_col].notna() & (seed_df[key_col] != "")]
+
+#     # Avoid duplicate seed rows causing update problems
+#     seed_df = seed_df.drop_duplicates(subset=[key_col], keep="last")
+
+#     # Add any seed columns missing from live file
+#     for col in seed_df.columns:
+#         if col not in live_df.columns:
+#             live_df[col] = None
+
+#     live_df = live_df.set_index(key_col)
+#     seed_df = seed_df.set_index(key_col)
+
+#     matching_players = live_df.index.intersection(seed_df.index)
+
+#     for player_key in matching_players:
+#         for col in seed_df.columns:
+#             live_df.at[player_key, col] = seed_df.at[player_key, col]
+
+#     live_df = live_df.reset_index()
+
+#     save_players(live_df)
+#     return live_df
+
 def reload_players_from_seed():
     """
-    Update live players.xlsx from seed_players.xlsx for matching players only.
-    Keeps live-only players and live-only columns.
-    Adds seed columns if missing.
+    Update live players.xlsx from seed_players.xlsx:
+    - update matching players
+    - add players that exist in seed but not live
+    - keep players that exist in live but not seed
     """
     if not os.path.exists(SEED_PLAYERS_FILE):
         raise FileNotFoundError(f"{SEED_PLAYERS_FILE} not found")
@@ -240,39 +290,55 @@ def reload_players_from_seed():
     if seed_df.empty:
         raise ValueError("seed_players.xlsx is empty")
 
-    key_col = "Player No"
-
-    if key_col not in live_df.columns or key_col not in seed_df.columns:
-        key_col = "Player"
+    key_col = "Player"
 
     live_df[key_col] = live_df[key_col].astype(str).str.strip()
     seed_df[key_col] = seed_df[key_col].astype(str).str.strip()
 
-    # Remove blank keys
-    live_df = live_df[live_df[key_col].notna() & (live_df[key_col] != "")]
-    seed_df = seed_df[seed_df[key_col].notna() & (seed_df[key_col] != "")]
+    seed_df = seed_df[seed_df[key_col].notna() & (seed_df[key_col] != "") & (seed_df[key_col].str.lower() != "nan")]
+    live_df = live_df[live_df[key_col].notna() & (live_df[key_col] != "") & (live_df[key_col].str.lower() != "nan")]
 
-    # Avoid duplicate seed rows causing update problems
     seed_df = seed_df.drop_duplicates(subset=[key_col], keep="last")
+    live_df = live_df.drop_duplicates(subset=[key_col], keep="last")
 
-    # Add any seed columns missing from live file
+    # Make both files have the same columns
     for col in seed_df.columns:
         if col not in live_df.columns:
             live_df[col] = None
 
+    for col in live_df.columns:
+        if col not in seed_df.columns:
+            seed_df[col] = None
+
     live_df = live_df.set_index(key_col)
     seed_df = seed_df.set_index(key_col)
 
+    # Update matching players only
     matching_players = live_df.index.intersection(seed_df.index)
 
-    for player_key in matching_players:
+    for player in matching_players:
         for col in seed_df.columns:
-            live_df.at[player_key, col] = seed_df.at[player_key, col]
+            value = seed_df.at[player, col]
+            if pd.notna(value) and value != "":
+                live_df.at[player, col] = value
+
+    # Add players that are in seed but missing from live
+    missing_from_live = seed_df.index.difference(live_df.index)
+
+    if len(missing_from_live) > 0:
+        live_df = pd.concat([live_df, seed_df.loc[missing_from_live]], axis=0)
 
     live_df = live_df.reset_index()
+    live_df = live_df.sort_values("Player").reset_index(drop=True)
 
     save_players(live_df)
     return live_df
+
+
+
+
+
+
 
 # =========================================================
 # Rounds
