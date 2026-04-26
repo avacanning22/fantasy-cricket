@@ -440,6 +440,14 @@ def admin_dashboard():
                 latest_cols = ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
                 round_cols = [f"{current_round}p{i}" for i in range(1, 5)] + [f"{current_round}pw"]
 
+                all_pick_cols = latest_cols + round_cols
+
+                for col in all_pick_cols:
+                    if col not in picks_df.columns:
+                        picks_df[col] = pd.Series("", index=picks_df.index, dtype="object")
+                    else:
+                        picks_df[col] = picks_df[col].astype("object")
+
                 for idx, row in picks_df.iterrows():
                     if all(pd.notna(row.get(c)) and row.get(c) not in ["", None] for c in round_cols):
                         for rcol, lcol in zip(round_cols, latest_cols):
