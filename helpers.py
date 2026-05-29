@@ -546,175 +546,257 @@ def read_fixtures(file_path=None):
 # Fantasy score calculation
 # =========================================================
 
-def calculate_all_player_scores(period_name):
+# def calculate_all_player_scores(period_name):
+#     """
+#     Calculate fantasy scores for all players for a given round/month.
+#     Updates the players file with new scores.
+#     """
+#     period_name = _normalize_round_name(period_name)
+#     if not period_name:
+#         print("[WARN] No period_name provided.")
+#         return
+
+#     score_column = f"{period_name}_score"
+
+#     try:
+#         players_df = pd.read_excel(PLAYERS_FILE)
+#     except FileNotFoundError:
+#         print(f"[ERROR] File {PLAYERS_FILE} not found.")
+#         return
+#     except Exception as e:
+#         print(f"[ERROR] Failed to read {PLAYERS_FILE}: {e}")
+#         return
+
+#     if score_column not in players_df.columns:
+#         players_df[score_column] = None
+
+#     allowed_teams = {"Leinster W1", "Leinster W2", "Leinster W3"}
+#     headers = {"User-Agent": "Mozilla/5.0"}
+#     scores = []
+
+#     for _, player_row in players_df.iterrows():
+#         player_name = player_row.get("Player", "Unknown")
+#         player_id = player_row.get("Player No")
+#         starring_level = player_row.get("starrings", 1)
+
+#         df_matches = pd.DataFrame()
+#         df_batting = pd.DataFrame()
+#         howout_counts = pd.DataFrame()
+
+#         try:
+#             runreport_url = (
+#                 f"https://www2.cricketstatz.com/ss/linkreport?mode=53"
+#                 f"&playerid={player_id}&club=4537&season=2026&grade=0&pool="
+#             )
+#             try:
+#                 rr_resp = requests.get(runreport_url, headers=headers, timeout=10)
+#                 if rr_resp.status_code == 200:
+#                     rr_table = BeautifulSoup(rr_resp.text, "html.parser").find("table")
+#                     if rr_table:
+#                         rows = rr_table.find_all("tr")
+#                         table_data = [
+#                             [td.get_text(strip=True) for td in tr.find_all("td")]
+#                             for tr in rows if tr.find_all("td")
+#                         ]
+#                         if table_data:
+#                             headers_row = table_data[0]
+#                             data_rows = table_data[1:]
+
+#                             seen = {}
+#                             unique_headers = []
+#                             for h in headers_row:
+#                                 if h in seen:
+#                                     seen[h] += 1
+#                                     unique_headers.append(f"{h}_{seen[h]}")
+#                                 else:
+#                                     seen[h] = 0
+#                                     unique_headers.append(h)
+
+#                             df_matches = pd.DataFrame(data_rows, columns=unique_headers)
+
+#                             if "Team" in df_matches.columns:
+#                                 df_matches = df_matches[df_matches["Team"].isin(allowed_teams)]
+
+#                             try:
+#                                 df_matches["Economy"] = (
+#                                     pd.to_numeric(df_matches.iloc[:, 11], errors="coerce") /
+#                                     pd.to_numeric(df_matches.iloc[:, 9], errors="coerce")
+#                                 ).round(2)
+#                             except Exception:
+#                                 df_matches["Economy"] = None
+#             except requests.RequestException as e:
+#                 print(f"[WARN] Could not fetch match report for {player_name}: {e}")
+
+#             howout_url = (
+#                 f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1"
+#                 f"&bowlerid={player_id}&club=4536&oppclub=4537&season=2026&grade=0&pool="
+#             )
+#             try:
+#                 ho_resp = requests.get(howout_url, headers=headers, timeout=10)
+#                 if ho_resp.status_code == 200:
+#                     ho_table = BeautifulSoup(ho_resp.text, "html.parser").find("table")
+#                     if ho_table:
+#                         rows = ho_table.find_all("tr")[1:]
+#                         howout_list = [
+#                             tds[7].get_text(strip=True)
+#                             for tr in rows
+#                             if len(tds := tr.find_all("td")) >= 8
+#                             and tds[2].get_text(strip=True) in allowed_teams
+#                         ]
+#                         if howout_list:
+#                             howout_counts = pd.Series(howout_list).value_counts().reset_index()
+#                             howout_counts.columns = ["How Out", "Count"]
+#             except requests.RequestException as e:
+#                 print(f"[WARN] Could not fetch how-out report for {player_name}: {e}")
+
+#             batting_url = (
+#                 f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1"
+#                 f"&playerid={player_id}&club=4537&season=2026&grade=0&pool="
+#             )
+#             try:
+#                 bat_resp = requests.get(batting_url, headers=headers, timeout=10)
+#                 if bat_resp.status_code == 200:
+#                     bat_table = BeautifulSoup(bat_resp.text, "html.parser").find("table")
+#                     if bat_table:
+#                         rows = bat_table.find_all("tr")
+#                         table_data = [
+#                             [td.get_text(strip=True) for td in tr.find_all("td")]
+#                             for tr in rows if tr.find_all("td")
+#                         ]
+#                         if table_data:
+#                             headers_row = table_data[0]
+#                             data_rows = table_data[1:]
+#                             new_rows = []
+
+#                             for row in data_rows:
+#                                 new_row = row.copy()
+#                                 if len(row) > 13:
+#                                     val_runs = row[10]
+#                                     val_balls = row[13]
+#                                     val_runs_clean = val_runs.replace("*", "").strip() if isinstance(val_runs, str) else val_runs
+#                                     val_balls_clean = val_balls.strip() if isinstance(val_balls, str) else val_balls
+#                                     try:
+#                                         if str(val_runs_clean).lower() == "dnb":
+#                                             runs_per_ball = "DNB"
+#                                             sr_val = "DNB"
+#                                         else:
+#                                             runs = float(val_runs_clean)
+#                                             balls = float(val_balls_clean)
+#                                             runs_per_ball = round(runs / balls, 2) if balls != 0 else 0
+#                                             sr_val = round((runs / balls) * 100, 2) if balls != 0 else 0
+#                                     except Exception:
+#                                         runs_per_ball = "Error"
+#                                         sr_val = "Error"
+#                                 else:
+#                                     runs_per_ball = 0
+#                                     sr_val = 0
+
+#                                 new_row.append(runs_per_ball)
+#                                 new_row.append(sr_val)
+#                                 new_rows.append(new_row)
+
+#                             headers_row += ["Runs/Balls", "SR"]
+#                             df_batting = pd.DataFrame(new_rows, columns=headers_row)
+#             except requests.RequestException as e:
+#                 print(f"[WARN] Could not fetch batting report for {player_name}: {e}")
+
+#             score, _ = calculate_fantasy_score(
+#                 df_matches=df_matches,
+#                 df_batting=df_batting,
+#                 howout_counts=howout_counts,
+#                 starring_level=starring_level
+#             )
+#             scores.append(score)
+
+#         except Exception as e:
+#             print(f"[ERROR] Failed calculating score for {player_name}: {e}")
+#             scores.append(0)
+
+#     players_df[score_column] = scores
+#     _atomic_write_excel(players_df, PLAYERS_FILE)
+#     print(f"[INFO] Scores updated for round: {period_name}")
+
+
+def calculate_monthly_player_scores(period_name):
     """
-    Calculate fantasy scores for all players for a given round/month.
-    Updates the players file with new scores.
+    Recalculates fantasy scores for all players using player_performances.xlsx
+    for a given selection period and stores results in players.xlsx.
+
+    Output column: period_name (e.g. 'May2026')
     """
+
     period_name = _normalize_round_name(period_name)
     if not period_name:
-        print("[WARN] No period_name provided.")
+        print("[WARN] No period_name provided")
         return
 
-    score_column = f"{period_name}_score"
+    # Load data
+    perf_df = pd.read_excel("player_performances.xlsx")
+    players_df = load_players()
 
-    try:
-        players_df = pd.read_excel(PLAYERS_FILE)
-    except FileNotFoundError:
-        print(f"[ERROR] File {PLAYERS_FILE} not found.")
+    # Filter only this period
+    perf_df = perf_df[perf_df["selection_period"] == period_name].copy()
+
+    if perf_df.empty:
+        print(f"[WARN] No performance data for {period_name}")
         return
-    except Exception as e:
-        print(f"[ERROR] Failed to read {PLAYERS_FILE}: {e}")
-        return
 
-    if score_column not in players_df.columns:
-        players_df[score_column] = None
+    # Ensure output column exists
+    if period_name not in players_df.columns:
+        players_df[period_name] = 0
 
-    allowed_teams = {"Leinster W1", "Leinster W2", "Leinster W3"}
-    headers = {"User-Agent": "Mozilla/5.0"}
-    scores = []
+    results = []
 
-    for _, player_row in players_df.iterrows():
-        player_name = player_row.get("Player", "Unknown")
-        player_id = player_row.get("Player No")
-        starring_level = player_row.get("starrings", 1)
+    # Group by player
+    for player_name, group in perf_df.groupby("Player"):
 
-        df_matches = pd.DataFrame()
-        df_batting = pd.DataFrame()
-        howout_counts = pd.DataFrame()
+        total_score = 0
 
-        try:
-            runreport_url = (
-                f"https://www2.cricketstatz.com/ss/linkreport?mode=53"
-                f"&playerid={player_id}&club=4537&season=2026&grade=0&pool="
-            )
+        for _, row in group.iterrows():
+
             try:
-                rr_resp = requests.get(runreport_url, headers=headers, timeout=10)
-                if rr_resp.status_code == 200:
-                    rr_table = BeautifulSoup(rr_resp.text, "html.parser").find("table")
-                    if rr_table:
-                        rows = rr_table.find_all("tr")
-                        table_data = [
-                            [td.get_text(strip=True) for td in tr.find_all("td")]
-                            for tr in rows if tr.find_all("td")
-                        ]
-                        if table_data:
-                            headers_row = table_data[0]
-                            data_rows = table_data[1:]
+                # Build minimal df_matches from row
+                df_matches = pd.DataFrame([row])
 
-                            seen = {}
-                            unique_headers = []
-                            for h in headers_row:
-                                if h in seen:
-                                    seen[h] += 1
-                                    unique_headers.append(f"{h}_{seen[h]}")
-                                else:
-                                    seen[h] = 0
-                                    unique_headers.append(h)
+                # Build minimal df_batting (only SR logic uses it)
+                df_batting = pd.DataFrame([{
+                    "SR": row.get("SR", None),
+                    "Balls": row.get("balls", None)
+                }])
 
-                            df_matches = pd.DataFrame(data_rows, columns=unique_headers)
+                # How-out approximation (safe fallback)
+                howout_counts = pd.DataFrame({
+                    "How Out": [row.get("opposition", "")],
+                    "Count": [1]
+                })
 
-                            if "Team" in df_matches.columns:
-                                df_matches = df_matches[df_matches["Team"].isin(allowed_teams)]
+                starring_level = row.get("starrings", 1)
 
-                            try:
-                                df_matches["Economy"] = (
-                                    pd.to_numeric(df_matches.iloc[:, 11], errors="coerce") /
-                                    pd.to_numeric(df_matches.iloc[:, 9], errors="coerce")
-                                ).round(2)
-                            except Exception:
-                                df_matches["Economy"] = None
-            except requests.RequestException as e:
-                print(f"[WARN] Could not fetch match report for {player_name}: {e}")
+                score, _ = calculate_fantasy_score(
+                    df_matches=df_matches,
+                    df_batting=df_batting,
+                    howout_counts=howout_counts,
+                    starring_level=starring_level
+                )
 
-            howout_url = (
-                f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1"
-                f"&bowlerid={player_id}&club=4536&oppclub=4537&season=2026&grade=0&pool="
-            )
-            try:
-                ho_resp = requests.get(howout_url, headers=headers, timeout=10)
-                if ho_resp.status_code == 200:
-                    ho_table = BeautifulSoup(ho_resp.text, "html.parser").find("table")
-                    if ho_table:
-                        rows = ho_table.find_all("tr")[1:]
-                        howout_list = [
-                            tds[7].get_text(strip=True)
-                            for tr in rows
-                            if len(tds := tr.find_all("td")) >= 8
-                            and tds[2].get_text(strip=True) in allowed_teams
-                        ]
-                        if howout_list:
-                            howout_counts = pd.Series(howout_list).value_counts().reset_index()
-                            howout_counts.columns = ["How Out", "Count"]
-            except requests.RequestException as e:
-                print(f"[WARN] Could not fetch how-out report for {player_name}: {e}")
+                total_score += float(score)
 
-            batting_url = (
-                f"https://www2.cricketstatz.com/ss/linkreport?mode=55&howout=-1"
-                f"&playerid={player_id}&club=4537&season=2026&grade=0&pool="
-            )
-            try:
-                bat_resp = requests.get(batting_url, headers=headers, timeout=10)
-                if bat_resp.status_code == 200:
-                    bat_table = BeautifulSoup(bat_resp.text, "html.parser").find("table")
-                    if bat_table:
-                        rows = bat_table.find_all("tr")
-                        table_data = [
-                            [td.get_text(strip=True) for td in tr.find_all("td")]
-                            for tr in rows if tr.find_all("td")
-                        ]
-                        if table_data:
-                            headers_row = table_data[0]
-                            data_rows = table_data[1:]
-                            new_rows = []
+            except Exception as e:
+                print(f"[WARN] Skipping row for {player_name}: {e}")
+                continue
 
-                            for row in data_rows:
-                                new_row = row.copy()
-                                if len(row) > 13:
-                                    val_runs = row[10]
-                                    val_balls = row[13]
-                                    val_runs_clean = val_runs.replace("*", "").strip() if isinstance(val_runs, str) else val_runs
-                                    val_balls_clean = val_balls.strip() if isinstance(val_balls, str) else val_balls
-                                    try:
-                                        if str(val_runs_clean).lower() == "dnb":
-                                            runs_per_ball = "DNB"
-                                            sr_val = "DNB"
-                                        else:
-                                            runs = float(val_runs_clean)
-                                            balls = float(val_balls_clean)
-                                            runs_per_ball = round(runs / balls, 2) if balls != 0 else 0
-                                            sr_val = round((runs / balls) * 100, 2) if balls != 0 else 0
-                                    except Exception:
-                                        runs_per_ball = "Error"
-                                        sr_val = "Error"
-                                else:
-                                    runs_per_ball = 0
-                                    sr_val = 0
+        results.append((player_name, total_score))
 
-                                new_row.append(runs_per_ball)
-                                new_row.append(sr_val)
-                                new_rows.append(new_row)
+    # Write back into players.xlsx
+    for player_name, score in results:
+        players_df.loc[
+            players_df["Player"] == player_name,
+            period_name
+        ] = score
 
-                            headers_row += ["Runs/Balls", "SR"]
-                            df_batting = pd.DataFrame(new_rows, columns=headers_row)
-            except requests.RequestException as e:
-                print(f"[WARN] Could not fetch batting report for {player_name}: {e}")
+    save_players(players_df)
 
-            score, _ = calculate_fantasy_score(
-                df_matches=df_matches,
-                df_batting=df_batting,
-                howout_counts=howout_counts,
-                starring_level=starring_level
-            )
-            scores.append(score)
-
-        except Exception as e:
-            print(f"[ERROR] Failed calculating score for {player_name}: {e}")
-            scores.append(0)
-
-    players_df[score_column] = scores
-    _atomic_write_excel(players_df, PLAYERS_FILE)
-    print(f"[INFO] Scores updated for round: {period_name}")
+    print(f"[INFO] Updated fantasy scores for {period_name}")
 
 
 # =========================================================
@@ -1204,3 +1286,194 @@ def get_selection_period(match_date, periods):
             return p["period_name"]
 
     return None
+
+
+def calculate_monthly_player_scores(period_name):
+    period_name = _normalize_round_name(period_name)
+    if not period_name:
+        return
+
+    perf_df = pd.read_excel("player_performances.xlsx")
+
+    # filter only this selection period
+    perf_df = perf_df[perf_df["selection_period"] == period_name].copy()
+
+    if perf_df.empty:
+        print(f"[WARN] No performances for {period_name}")
+        return
+
+    players_df = load_players()
+
+    score_column = period_name
+    if score_column not in players_df.columns:
+        players_df[score_column] = 0
+
+    results = []
+
+    # group per player
+    for player, group in perf_df.groupby("Player"):
+
+        total_score = 0
+
+        for _, row in group.iterrows():
+
+            # build minimal structures to reuse your scoring engine
+            df_matches = pd.DataFrame([row])
+            df_batting = pd.DataFrame([row])
+
+            howout_counts = pd.DataFrame({
+                "How Out": [row.get("opposition")],
+                "Count": [1]
+            })
+
+            starring_level = row.get("starrings", 1)
+
+            score, _ = calculate_fantasy_score(
+                df_matches=df_matches,
+                df_batting=df_batting,
+                howout_counts=howout_counts,
+                starring_level=starring_level
+            )
+
+            total_score += float(score)
+
+        results.append((player, total_score))
+
+    # write back into players.xlsx
+    for player, score in results:
+        players_df.loc[players_df["Player"] == player, score_column] = score
+
+    save_players(players_df)
+
+    print(f"[INFO] Updated monthly scores for {period_name}")
+
+
+import pandas as pd
+
+def add_match_fantasy_points(player_perf_file="player_performances.xlsx"):
+    """
+    Adds a 'points' column to each match row using calculate_fantasy_score.
+    """
+
+    df = pd.read_excel(player_perf_file)
+
+    if df.empty:
+        print("[WARN] player_performances is empty")
+        return df
+
+    if "points" not in df.columns:
+        df["points"] = 0
+
+    results = []
+
+    for _, row in df.iterrows():
+
+        # -----------------------------
+        # Build 1-row match inputs
+        # -----------------------------
+        df_matches = pd.DataFrame([row])
+        df_batting = pd.DataFrame([row])
+
+        # -----------------------------
+        # How out fallback (simple version)
+        # -----------------------------
+        howout_counts = pd.DataFrame({
+            "How Out": [row.get("opposition", "Unknown")],
+            "Count": [1]
+        })
+
+        starring_level = row.get("starrings", 1)
+
+        try:
+            score, _ = calculate_fantasy_score(
+                df_matches=df_matches,
+                df_batting=df_batting,
+                howout_counts=howout_counts,
+                starring_level=starring_level
+            )
+        except Exception as e:
+            print(f"[WARN] scoring failed for row: {e}")
+            score = 0
+
+        results.append(score)
+
+    df["points"] = results
+
+    df.to_excel(player_perf_file, index=False)
+
+    print(f"[INFO] Added match points to {player_perf_file}")
+
+    return df
+
+
+import pandas as pd
+
+def update_player_period_scores_from_matches(
+    perf_file="player_performances.xlsx"
+):
+    """
+    Aggregates match-level 'points' into period totals
+    and stores them in players.xlsx as columns like May2026.
+    """
+
+    perf_df = pd.read_excel(perf_file)
+    players_df = load_players()
+
+    if perf_df.empty:
+        print("[WARN] No performance data found")
+        return players_df
+
+    required_cols = ["Player", "selection_period", "points"]
+    for col in required_cols:
+        if col not in perf_df.columns:
+            raise ValueError(f"Missing column in player_performances: {col}")
+
+    # clean
+    perf_df = perf_df.dropna(subset=["Player", "selection_period"])
+
+    perf_df["Player"] = perf_df["Player"].astype(str).str.strip()
+    perf_df["selection_period"] = perf_df["selection_period"].astype(str).str.strip()
+
+    players_df["Player"] = players_df["Player"].astype(str).str.strip()
+
+    # -----------------------------
+    # 1. Aggregate: Player + Period
+    # -----------------------------
+    grouped = (
+        perf_df.groupby(["Player", "selection_period"])["points"]
+        .sum()
+        .reset_index()
+    )
+
+    # -----------------------------
+    # 2. Write into players.xlsx
+    # -----------------------------
+    for _, row in grouped.iterrows():
+        player = row["Player"]
+        period = row["selection_period"]
+        score = float(row["points"])
+
+        if period not in players_df.columns:
+            players_df[period] = 0
+
+        players_df.loc[
+            players_df["Player"] == player,
+            period
+        ] = score
+
+    save_players(players_df)
+
+    print("[INFO] Player period scores updated from match points")
+    return players_df
+
+
+def get_display_period():
+    """
+    Returns active period if exists, else last period.
+    """
+    active = get_active_round()
+    last = get_last_round()
+
+    if active:
+        return active
+    return last
