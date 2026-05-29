@@ -383,6 +383,11 @@ def dashboard():
 
     username = normalize_username(session["username"])
 
+    current_round_temp = get_active_round() or get_last_round()
+
+    if current_round_temp:
+        calculate_monthly_player_scores(current_round_temp)
+    recalculate_all_team_scores(round_name)
     picks_df = normalize_username_column(load_picks())
     players_df = load_players()
 
