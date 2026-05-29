@@ -397,6 +397,58 @@ def set_last_round(round_name):
 # Team score
 # =========================================================
 
+# def update_team_score(username, round_name):
+#     round_name = _normalize_round_name(round_name)
+#     if not round_name:
+#         return 0
+
+#     try:
+#         players_df = load_players()
+#         picks_df = load_picks()
+#     except Exception as e:
+#         print(f"[WARN] update_team_score load failed: {e}")
+#         return 0
+
+#     if "username" not in picks_df.columns:
+#         return 0
+
+#     picks_df["username"] = picks_df["username"].astype(str).str.strip().str.lower()
+#     username = str(username).strip().lower()
+
+#     # score_column = f"{round_name}_score"
+#     score_column = round_name
+#     if score_column not in players_df.columns:
+#         return 0
+
+#     if username not in picks_df["username"].values:
+#         return 0
+
+#     user_index = picks_df[picks_df["username"] == username].index[0]
+#     pick_cols = [f"{round_name}p{i}" for i in [1, 2, 3, 4]] + [f"{round_name}pw"]
+
+#     selected_players = [
+#         picks_df.loc[user_index, c]
+#         for c in pick_cols
+#         if c in picks_df.columns and pd.notna(picks_df.loc[user_index, c])
+#     ]
+
+#     total_score = 0
+#     for player in selected_players:
+#         row = players_df[players_df["Player"] == player]
+#         if not row.empty:
+#             score = row.iloc[0].get(score_column, 0)
+#             try:
+#                 total_score += float(score)
+#             except Exception:
+#                 total_score += 0
+
+#     if score_column not in picks_df.columns:
+#         picks_df[score_column] = None
+
+#     picks_df.loc[user_index, score_column] = total_score
+#     save_picks(picks_df)
+#     return total_score
+
 def update_team_score(username, round_name):
     round_name = _normalize_round_name(round_name)
     if not round_name:
@@ -412,43 +464,59 @@ def update_team_score(username, round_name):
     if "username" not in picks_df.columns:
         return 0
 
+    # normalize usernames
     picks_df["username"] = picks_df["username"].astype(str).str.strip().str.lower()
     username = str(username).strip().lower()
-
-    # score_column = f"{round_name}_score"
-    score_column = round_name
-    if score_column not in players_df.columns:
-        return 0
 
     if username not in picks_df["username"].values:
         return 0
 
     user_index = picks_df[picks_df["username"] == username].index[0]
+
+    # columns for team
     pick_cols = [f"{round_name}p{i}" for i in [1, 2, 3, 4]] + [f"{round_name}pw"]
 
-    selected_players = [
-        picks_df.loc[user_index, c]
-        for c in pick_cols
-        if c in picks_df.columns and pd.notna(picks_df.loc[user_index, c])
-    ]
-
     total_score = 0
-    for player in selected_players:
-        row = players_df[players_df["Player"] == player]
-        if not row.empty:
-            score = row.iloc[0].get(score_column, 0)
-            try:
-                total_score += float(score)
-            except Exception:
-                total_score += 0
 
-    if score_column not in picks_df.columns:
-        picks_df[score_column] = None
+    for col in pick_cols:
+        if col not in picks_df.columns:
+            continue
 
-    picks_df.loc[user_index, score_column] = total_score
+        player = picks_df.loc[user_index, col]
+
+        if pd.isna(player) or player in ["", None]:
+            continue
+
+        player = str(player).strip()
+
+        # find player row
+        row = players_df[players_df["Player"].astype(str).str.strip() == player]
+
+        if row.empty:
+            continue
+
+        score = row.iloc[0].get(round_name, 0)
+
+        try:
+            score = float(score)
+        except Exception:
+            score = 0
+
+        # ⭐ CAPTAIN RULE
+        if col.endswith("pw"):
+            score *= 2
+
+        total_score += score
+
+    # ensure column exists for leaderboard storage
+    if round_name not in picks_df.columns:
+        picks_df[round_name] = 0
+
+    picks_df.loc[user_index, round_name] = total_score
+
     save_picks(picks_df)
-    return total_score
 
+    return total_score
 
 def team_already_exists(username, selected_players, round_name):
     round_name = _normalize_round_name(round_name)
