@@ -1478,3 +1478,35 @@ def get_display_period():
     if active:
         return active
     return last
+
+
+def recalculate_all_team_scores(round_name):
+    picks_df = load_picks()
+    players_df = load_players()
+
+    picks_df["username"] = picks_df["username"].astype(str).str.strip().str.lower()
+
+    score_col = round_name
+    picks_df[score_col] = 0
+
+    for idx, row in picks_df.iterrows():
+        username = row["username"]
+
+        pick_cols = [f"{round_name}p{i}" for i in [1,2,3,4]] + [f"{round_name}pw"]
+
+        selected_players = [
+            row.get(c)
+            for c in pick_cols
+            if c in picks_df.columns and pd.notna(row.get(c))
+        ]
+
+        total = 0
+        for player in selected_players:
+            match = players_df[players_df["Player"] == player]
+            if not match.empty:
+                total += float(match.iloc[0].get(round_name, 0) or 0)
+
+        picks_df.at[idx, score_col] = total
+
+    save_picks(picks_df)
+    return picks_df

@@ -21,7 +21,7 @@ from helpers import (
     load_starrings_df, calculate_monthly_player_scores,
     write_players_to_seed_from_starrings, update_player_period_scores_from_matches,
     reload_players_from_seed, get_display_period,
-    save_players,
+    save_players, recalculate_all_team_scores,
     write_players_to_seed,
     save_uploaded_starrings_file,
     sync_live_players_from_starrings,
@@ -593,10 +593,13 @@ def admin_dashboard():
     player_performances_df = pd.read_excel("player_performances.xlsx")
     add_match_fantasy_points()
     update_player_period_scores_from_matches()
-    # current_round_temp = get_active_round() or get_last_round()
+    
+    current_round_temp = get_active_round() or get_last_round()
 
-    # if current_round_temp:
-    #     calculate_monthly_player_scores(current_round_temp)
+    if current_round_temp:
+        calculate_monthly_player_scores(current_round_temp)
+    recalculate_all_team_scores(current_round_temp)
+
 
     current_round = get_active_round()
     months = ["May", "June", "July", "August"]
