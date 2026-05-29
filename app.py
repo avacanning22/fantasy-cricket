@@ -586,7 +586,9 @@ def admin_dashboard():
 
     picks_df = normalize_username_column(load_picks())
     users_df = normalize_username_column(load_users())
-    scrape_player_performances()
+    import threading
+
+    threading.Thread(target=scrape_player_performances, daemon=True).start()
     players_df = load_players()
     player_performances_df = pd.read_excel("player_performances.xlsx")
     add_match_fantasy_points()
