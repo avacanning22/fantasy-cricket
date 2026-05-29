@@ -9,6 +9,9 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+from urllib.parse import urlparse, parse_qs
+import json
+
 from points import calculate_fantasy_score
 
 
@@ -336,6 +339,20 @@ def force_update_seed_players_from_repo():
 
     return load_seed_players()
 
+
+MANUAL_STATS_FILE = str(DATA_DIR / "manual_stats.xlsx")
+
+def save_manual_match_stats(rows):
+    df_new = pd.DataFrame(rows)
+
+    if os.path.exists(MANUAL_STATS_FILE):
+        df_old = pd.read_excel(MANUAL_STATS_FILE)
+        df = pd.concat([df_old, df_new], ignore_index=True)
+    else:
+        df = df_new
+
+    _atomic_write_excel(df, MANUAL_STATS_FILE)
+    return df
 
 
 
@@ -959,3 +976,231 @@ def sync_live_players_from_starrings():
 
     save_players(players_df)
     return players_df
+
+
+
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0"
+}
+
+
+def convert_to_rrj_url(stats_link):
+    """
+    Converts:
+    runreport2.aspx?... 
+    OR linkreport?... 
+
+    into:
+    /ss/rrj?... 
+    """
+
+    parsed = urlparse(stats_link)
+    query = parse_qs(parsed.query)
+
+    params = {
+        "mode": query.get("mode", ["53"])[0],
+        "playerid": query.get("playerid", [""])[0],
+        "club": query.get("club", ["4537"])[0],
+        "season": query.get("season", [""])[0],
+        "grade": query.get("grade", [""])[0],
+        "pool": query.get("pool", [""])[0],
+    }
+
+    rrj_url = (
+        "https://www2.cricketstatz.com/ss/rrj?"
+        f"mode={params['mode']}"
+        f"&playerid={params['playerid']}"
+        f"&club={params['club']}"
+        f"&season={params['season']}"
+        f"&grade={params['grade']}"
+        f"&pool={params['pool']}"
+    )
+
+    return rrj_url
+
+
+def fix_duplicate_runs_keys(raw_text):
+    """
+    The API returns duplicate 'runs' keys.
+
+    First runs  -> batting_runs
+    Second runs -> bowling_runs
+    """
+
+    fixed_objects = []
+
+    object_matches = re.findall(r'\{.*?\}', raw_text)
+
+    for obj in object_matches:
+
+        run_matches = list(re.finditer(r'"runs"\s*:\s*([^,}]+)', obj))
+
+        if len(run_matches) >= 2:
+
+            first_start = run_matches[0].start()
+            second_start = run_matches[1].start()
+
+            obj = (
+                obj[:first_start]
+                + obj[first_start:].replace('"runs"', '"batting_runs"', 1)
+            )
+
+            second_match_updated = list(
+                re.finditer(r'"runs"\s*:\s*([^,}]+)', obj)
+            )[0]
+
+            second_start_updated = second_match_updated.start()
+
+            obj = (
+                obj[:second_start_updated]
+                + obj[second_start_updated:].replace('"runs"', '"bowling_runs"', 1)
+            )
+
+        fixed_objects.append(obj)
+
+    fixed_json = "[" + ",".join(fixed_objects) + "]"
+
+    return fixed_json
+
+
+def scrape_player_performances(
+    players_file="seed_data/players.xlsx",
+    output_file="player_performances.xlsx"
+):
+
+    players_df = pd.read_excel(players_file)
+
+    periods = load_selection_periods()
+
+    all_rows = []
+
+    for idx, player in players_df.iterrows():
+
+        player_name = player.get("Player")
+        player_no = player.get("Player No")
+        starring = player.get("starrings")
+        team = player.get("Team")
+        stats_link = player.get("Stats Link")
+
+        if pd.isna(stats_link):
+            continue
+
+        try:
+
+            rrj_url = convert_to_rrj_url(stats_link)
+
+            print(f"Scraping: {player_name}")
+
+            response = requests.get(rrj_url, headers=HEADERS, timeout=20)
+
+            if response.status_code != 200:
+                print(f"Failed for {player_name}")
+                continue
+
+            raw_text = response.text.strip()
+
+            if not raw_text:
+                continue
+
+            fixed_json = fix_duplicate_runs_keys(raw_text)
+
+            matches = json.loads(fixed_json)
+
+            for match in matches:
+                match_date_raw = match.get("date")
+
+                try:
+                    match_date = pd.to_datetime(match_date_raw, errors="coerce", dayfirst=True)
+                except Exception:
+                    match_date = None
+
+                selection_period = get_selection_period(match_date, periods)
+
+                row = {
+                    "Player": player_name,
+                    "Player No": player_no,
+                    "starrings": starring,
+                    "Team": team,
+
+                    "selection_period": selection_period,   # ✅ NEW COLUMN
+
+                    "match_team": match.get("team"),
+                    "opposition": match.get("opposition"),
+                    "date": match_date_raw,
+
+                    "batting_runs": match.get("batting_runs"),
+                    "4s": match.get("4s"),
+                    "6s": match.get("6s"),
+
+                    "overs": match.get("overs"),
+                    "maids": match.get("maids"),
+                    "bowling_runs": match.get("bowling_runs"),
+                    "wkts": match.get("wkts"),
+
+                    "ctsfld": match.get("ctsfld"),
+                    "ctskeep": match.get("ctskeep"),
+                    "stumps": match.get("stumps"),
+                    "runouts": match.get("runouts"),
+                }
+
+                all_rows.append(row)
+
+        except Exception as e:
+            print(f"Error scraping {player_name}: {e}")
+
+    output_df = pd.DataFrame(all_rows)
+
+    output_df.to_excel(output_file, index=False)
+
+    print(f"Saved to {output_file}")
+
+    return output_df
+
+
+
+def load_selection_periods(file_path="selection_dates.xlsx"):
+    """
+    Returns a list of selection periods:
+    [
+        {"period_name": "...", "start": Timestamp, "end": Timestamp}
+    ]
+    """
+    try:
+        df = pd.read_excel(file_path)
+
+        required_cols = ["period_name", "start_date", "end_date"]
+        if not all(col in df.columns for col in required_cols):
+            raise ValueError("selection_dates.xlsx must have: period_name, start_date, end_date")
+
+        df["start_date"] = pd.to_datetime(df["start_date"], errors="coerce", dayfirst=True)
+        df["end_date"] = pd.to_datetime(df["end_date"], errors="coerce", dayfirst=True)
+
+        periods = []
+        for _, row in df.iterrows():
+            if pd.notna(row["start_date"]) and pd.notna(row["end_date"]):
+                periods.append({
+                    "period_name": row["period_name"],
+                    "start": row["start_date"],
+                    "end": row["end_date"]
+                })
+
+        return periods
+
+    except Exception as e:
+        print(f"[WARN] Failed loading selection periods: {e}")
+        return []
+    
+
+def get_selection_period(match_date, periods):
+    """
+    Returns period_name if match_date falls within a range.
+    """
+    if pd.isna(match_date):
+        return None
+
+    for p in periods:
+        if p["start"] <= match_date <= p["end"]:
+            return p["period_name"]
+
+    return None

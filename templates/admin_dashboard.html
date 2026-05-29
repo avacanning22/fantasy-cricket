@@ -175,6 +175,32 @@
         </button>
     </form>
 
+    <div class="section">
+        <h2>Player Performances</h2>
+
+        {% if player_performances %}
+            <table>
+                <tr>
+                    {% for col in player_performances[0].keys() %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+
+                {% for row in player_performances %}
+                <tr>
+                    {% for val in row.values() %}
+                        <td>{{ val }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <div class="empty-message">No performance data found.</div>
+        {% endif %}
+    </div>
+
+
+
     <form method="POST">
         <input type="hidden" name="action" value="force_update_seed_players_from_repo">
         <button type="submit">Update Persistent Seed From Repo</button>

@@ -26,6 +26,8 @@ from helpers import (
     save_uploaded_starrings_file,
     sync_live_players_from_starrings,
     force_update_seed_players_from_repo,
+    save_manual_match_stats,
+    scrape_player_performances,
 )
 
 seed_data_from_repo()
@@ -381,7 +383,9 @@ def admin_dashboard():
 
     picks_df = normalize_username_column(load_picks())
     users_df = normalize_username_column(load_users())
+    scrape_player_performances()
     players_df = load_players()
+    player_performances_df = pd.read_excel("player_performances.xlsx")
     current_round = get_active_round()
     months = ["May", "June", "July", "August"]
 
@@ -406,6 +410,46 @@ def admin_dashboard():
             except Exception as e:
                 print("Error overwriting players.xlsx:", e)
                 flash("Could not overwrite players.xlsx.", "danger")
+            return redirect(url_for("admin_dashboard"))
+
+        elif action == "save_manual_match":
+            round_name = get_active_round() or get_last_round()
+
+            if not round_name:
+                flash("No active or previous round available.", "warning")
+                return redirect(url_for("admin_dashboard"))
+
+            rows = []
+
+            for i in range(1, 12):
+                player = request.form.get(f"player_{i}")
+
+                if not player:
+                    continue
+
+                rows.append({
+                    "round_name": round_name,
+                    "match_date": request.form.get("match_date"),
+                    "opponent": request.form.get("opponent"),
+                    "player": player,
+                    "runs": request.form.get(f"runs_{i}", 0),
+                    "balls": request.form.get(f"balls_{i}", 0),
+                    "wickets": request.form.get(f"wickets_{i}", 0),
+                    "overs": request.form.get(f"overs_{i}", 0),
+                    "runs_conceded": request.form.get(f"runs_conceded_{i}", 0),
+                    "catches": request.form.get(f"catches_{i}", 0),
+                    "stumpings": request.form.get(f"stumpings_{i}", 0),
+                    "runouts": request.form.get(f"runouts_{i}", 0),
+                    "how_out": request.form.get(f"how_out_{i}", ""),
+                })
+
+            if not rows:
+                flash("No players entered.", "warning")
+                return redirect(url_for("admin_dashboard"))
+
+            save_manual_match_stats(rows)
+
+            flash(f"Manual match stats saved for {round_name}.", "success")
             return redirect(url_for("admin_dashboard"))
 
         elif action == "force_update_seed_players_from_repo":
@@ -551,7 +595,8 @@ def admin_dashboard():
         picks=picks_df.to_dict(orient="records"),
         users=users_df.to_dict(orient="records"),
         players=players_df.to_dict(orient="records") if players_df is not None else [],
-        current_round=current_round
+        current_round=current_round,
+        player_performances=player_performances_df.to_dict(orient="records")  # ✅ ADD
     )
 
 
