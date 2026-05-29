@@ -415,7 +415,8 @@ def update_team_score(username, round_name):
     picks_df["username"] = picks_df["username"].astype(str).str.strip().str.lower()
     username = str(username).strip().lower()
 
-    score_column = f"{round_name}_score"
+    # score_column = f"{round_name}_score"
+    score_column = round_name
     if score_column not in players_df.columns:
         return 0
 
