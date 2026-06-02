@@ -482,11 +482,21 @@ def dashboard():
                 players_df[period_col], errors="coerce"
             ).fillna(0)
 
-            top_players = players_df.sort_values(period_col, ascending=False).head(10)
+            player_col = "player" if "player" in players_df.columns else "Player"
 
-            player_leaderboard = top_players[["Player", period_col]] \
-                .rename(columns={period_col: "Points"}) \
+            top_players = players_df.sort_values(
+                period_col,
+                ascending=False
+            ).head(10)
+
+            player_leaderboard = (
+                top_players[[player_col, period_col]]
+                .rename(columns={
+                    player_col: "Player",
+                    period_col: "Points"
+                })
                 .to_dict(orient="records")
+            )
         else:
             player_leaderboard = []
     except Exception as e:
@@ -529,8 +539,11 @@ def dashboard():
             period_col = round_name  # ✅ CHANGED
 
             for player in user_picks:
+                player_col = "player" if "player" in players_df.columns else "Player"
+
                 score_series = players_df.loc[
-                    players_df["Player"] == player, period_col
+                    players_df[player_col] == player,
+                    period_col
                 ]
                 player_scores[player] = score_series.iloc[0] if not score_series.empty else 0
 
@@ -834,6 +847,137 @@ def fixtures():
     return render_template("fixtures.html", fixtures=fixtures_list)
 
 
+# @app.route("/select_players", methods=["GET", "POST"])
+# def select_players():
+#     if "username" not in session:
+#         return redirect(url_for("login"))
+
+#     username = normalize_username(session["username"])
+#     active_round = get_active_round()
+
+#     if not active_round:
+#         flash("Player selection is currently closed.", "warning")
+#         return redirect(url_for("dashboard"))
+
+#     df_starrings = load_starrings_df()
+#     picks_df = normalize_username_column(load_picks())
+
+#     categories = ["Div 1", "Div 2", "Div 3", "Div 4", "Wildcard"]
+#     players_by_category = []
+
+#     df_starrings = df_starrings.copy()
+#     df_starrings["Player"] = df_starrings["Player"].astype(str).str.strip()
+
+#     for i in range(5):
+#         rule = slot_rules[i]
+
+#         if rule == "any":
+#             eligible_df = df_starrings.copy()
+#         else:
+#             eligible_df = df_starrings[df_starrings["starrings"].isin(rule)].copy()
+
+#         if i == 0:
+#             eligible_df = eligible_df.sort_values(by="starrings", ascending=True)
+
+#         players_by_category.append(
+#             eligible_df[["Player", "starrings"]].to_dict(orient="records")
+#         )
+
+#     user_row_df = picks_df[picks_df["username"] == username]
+#     user_row = user_row_df.iloc[0] if not user_row_df.empty else None
+
+#     latest_cols = ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
+#     user_previous_picks = []
+
+#     if user_row is not None:
+#         user_previous_picks = [
+#             user_row.get(c) for c in latest_cols
+#             if pd.notna(user_row.get(c)) and user_row.get(c) not in ["", None]
+#         ]
+
+#         if any(p == "X" for p in user_previous_picks):
+#             existing_teams = []
+#             last_round = get_last_round()
+#             if last_round:
+#                 round_cols = [f"{last_round}p{i}" for i in range(1, 5)] + [f"{last_round}pw"]
+#                 for _, row in picks_df.iterrows():
+#                     team = set([
+#                         row.get(c) for c in round_cols
+#                         if pd.notna(row.get(c)) and row.get(c) not in ["", None]
+#                     ])
+#                     if team:
+#                         existing_teams.append(team)
+
+#                 random_team = generate_random_team(df_starrings, slot_rules, existing_teams)
+
+#                 for i, col in enumerate(round_cols):
+#                     picks_df.loc[picks_df["username"] == username, col] = random_team[i]
+#                 for i, col in enumerate(latest_cols):
+#                     picks_df.loc[picks_df["username"] == username, col] = random_team[i]
+
+#                 save_picks(picks_df)
+#                 user_previous_picks = random_team
+#                 flash(f"A random team was assigned for the missed round '{last_round}'.", "info")
+
+#     if request.method == "POST":
+#         selected_players = [
+#             request.form.get("p1"),
+#             request.form.get("p2"),
+#             request.form.get("p3"),
+#             request.form.get("p4"),
+#             request.form.get("pw")
+#         ]
+
+#         if None in selected_players or "" in selected_players:
+#             flash("Please select all 5 players.", "warning")
+#             return redirect(url_for("select_players"))
+
+#         previous_team = []
+#         if user_row is not None:
+#             previous_team = [
+#                 user_row.get(c) for c in ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
+#                 if pd.notna(user_row.get(c)) and user_row.get(c) not in ["", None, "X"]
+#             ]
+
+#         overlap = set(selected_players) & set(previous_team)
+
+#         if len(overlap) > 1:
+#             flash(
+#                 f"You can carry over at most 1 player from your previous month's team. "
+#                 f"You kept {len(overlap)}: {', '.join(sorted(overlap))}",
+#                 "danger"
+#             )
+#             return redirect(url_for("select_players"))
+
+#         if team_already_exists(username, selected_players, active_round):
+#             flash("This exact team has already been selected.", "danger")
+#             return redirect(url_for("select_players"))
+
+#         if username not in picks_df["username"].values:
+#             picks_df = pd.concat([picks_df, pd.DataFrame([{"username": username}])], ignore_index=True)
+
+#         for i, slot in enumerate(["p1", "p2", "p3", "p4", "pw"]):
+#             col = f"{active_round}{slot}"
+
+#             if col not in picks_df.columns:
+#                 picks_df[col] = pd.Series("", index=picks_df.index, dtype="object")
+#             else:
+#                 picks_df[col] = picks_df[col].astype("object")
+
+#             picks_df.loc[picks_df["username"] == username, col] = str(selected_players[i])
+
+#         save_picks(picks_df)
+
+#         total_score = update_team_score(username, active_round)
+#         flash(f"Your picks have been saved! Current score: {total_score}", "success")
+#         return redirect(url_for("dashboard"))
+
+#     return render_template(
+#         "select_players.html",
+#         categories=categories,
+#         players_by_category=players_by_category,
+#         user_previous_picks=user_previous_picks
+#     )
 @app.route("/select_players", methods=["GET", "POST"])
 def select_players():
     if "username" not in session:
@@ -849,11 +993,33 @@ def select_players():
     df_starrings = load_starrings_df()
     picks_df = normalize_username_column(load_picks())
 
+    # =========================
+    # NEW STARRINGS FORMAT
+    # =========================
+    current_round = active_round
+    starrings_col = current_round
+
+    if starrings_col not in df_starrings.columns:
+        flash(f"No starrings column found for {current_round}", "danger")
+        return redirect(url_for("dashboard"))
+
     categories = ["Div 1", "Div 2", "Div 3", "Div 4", "Wildcard"]
     players_by_category = []
 
     df_starrings = df_starrings.copy()
-    df_starrings["Player"] = df_starrings["Player"].astype(str).str.strip()
+
+    # NEW COLUMN NAME
+    df_starrings["Player"] = (
+        df_starrings["Player"]
+        .astype(str)
+        .str.strip()
+    )
+
+    # Convert month column to numeric
+    df_starrings[starrings_col] = pd.to_numeric(
+        df_starrings[starrings_col],
+        errors="coerce"
+    )
 
     for i in range(5):
         rule = slot_rules[i]
@@ -861,13 +1027,23 @@ def select_players():
         if rule == "any":
             eligible_df = df_starrings.copy()
         else:
-            eligible_df = df_starrings[df_starrings["starrings"].isin(rule)].copy()
+            eligible_df = df_starrings[
+                df_starrings[starrings_col].isin(rule)
+            ].copy()
 
         if i == 0:
-            eligible_df = eligible_df.sort_values(by="starrings", ascending=True)
+            eligible_df = eligible_df.sort_values(
+                by=starrings_col,
+                ascending=True
+            )
 
         players_by_category.append(
-            eligible_df[["Player", "starrings"]].to_dict(orient="records")
+            eligible_df[["Player", starrings_col]]
+            .rename(columns={
+                "Player": "Player",
+                starrings_col: "starrings"
+            })
+            .to_dict(orient="records")
         )
 
     user_row_df = picks_df[picks_df["username"] == username]
@@ -885,26 +1061,39 @@ def select_players():
         if any(p == "X" for p in user_previous_picks):
             existing_teams = []
             last_round = get_last_round()
+
             if last_round:
                 round_cols = [f"{last_round}p{i}" for i in range(1, 5)] + [f"{last_round}pw"]
+
                 for _, row in picks_df.iterrows():
                     team = set([
                         row.get(c) for c in round_cols
                         if pd.notna(row.get(c)) and row.get(c) not in ["", None]
                     ])
+
                     if team:
                         existing_teams.append(team)
 
-                random_team = generate_random_team(df_starrings, slot_rules, existing_teams)
+                random_team = generate_random_team(
+                    df_starrings,
+                    slot_rules,
+                    existing_teams
+                )
 
                 for i, col in enumerate(round_cols):
                     picks_df.loc[picks_df["username"] == username, col] = random_team[i]
+
                 for i, col in enumerate(latest_cols):
                     picks_df.loc[picks_df["username"] == username, col] = random_team[i]
 
                 save_picks(picks_df)
+
                 user_previous_picks = random_team
-                flash(f"A random team was assigned for the missed round '{last_round}'.", "info")
+
+                flash(
+                    f"A random team was assigned for the missed round '{last_round}'.",
+                    "info"
+                )
 
     if request.method == "POST":
         selected_players = [
@@ -920,10 +1109,13 @@ def select_players():
             return redirect(url_for("select_players"))
 
         previous_team = []
+
         if user_row is not None:
             previous_team = [
-                user_row.get(c) for c in ["latestp1", "latestp2", "latestp3", "latestp4", "latestpw"]
-                if pd.notna(user_row.get(c)) and user_row.get(c) not in ["", None, "X"]
+                user_row.get(c)
+                for c in latest_cols
+                if pd.notna(user_row.get(c))
+                and user_row.get(c) not in ["", None, "X"]
             ]
 
         overlap = set(selected_players) & set(previous_team)
@@ -941,22 +1133,37 @@ def select_players():
             return redirect(url_for("select_players"))
 
         if username not in picks_df["username"].values:
-            picks_df = pd.concat([picks_df, pd.DataFrame([{"username": username}])], ignore_index=True)
+            picks_df = pd.concat(
+                [picks_df, pd.DataFrame([{"username": username}])],
+                ignore_index=True
+            )
 
         for i, slot in enumerate(["p1", "p2", "p3", "p4", "pw"]):
             col = f"{active_round}{slot}"
 
             if col not in picks_df.columns:
-                picks_df[col] = pd.Series("", index=picks_df.index, dtype="object")
+                picks_df[col] = pd.Series(
+                    "",
+                    index=picks_df.index,
+                    dtype="object"
+                )
             else:
                 picks_df[col] = picks_df[col].astype("object")
 
-            picks_df.loc[picks_df["username"] == username, col] = str(selected_players[i])
+            picks_df.loc[
+                picks_df["username"] == username,
+                col
+            ] = str(selected_players[i])
 
         save_picks(picks_df)
 
         total_score = update_team_score(username, active_round)
-        flash(f"Your picks have been saved! Current score: {total_score}", "success")
+
+        flash(
+            f"Your picks have been saved! Current score: {total_score}",
+            "success"
+        )
+
         return redirect(url_for("dashboard"))
 
     return render_template(
@@ -965,7 +1172,6 @@ def select_players():
         players_by_category=players_by_category,
         user_previous_picks=user_previous_picks
     )
-
 
 @app.route("/point_earning_details")
 def point_earning_details():
@@ -1004,13 +1210,18 @@ def player_stats(player_name):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
     }
 
-    player_match = df[df["Player"] == player_name]
+    # player_match = df[df["Player"] == player_name]
+    player_col = "player" if "player" in df.columns else "Player"
+
+    player_match = df[df[player_col] == player_name]
     if player_match.empty:
         flash(f"No data found for {player_name}", "warning")
         return redirect(url_for("dashboard"))
 
     row = player_match.iloc[0]
-    starring_level = row.get("starrings", 1)
+    current_round = get_active_round() or get_last_round()
+
+    starring_level = row.get(current_round, 1)
 
     allowed_teams = {"Leinster W1", "Leinster W2", "Leinster W3"}
 

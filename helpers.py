@@ -33,7 +33,7 @@ ACTIVE_ROUND_FILE = str(DATA_DIR / "active_round.txt")
 LAST_ROUND_FILE = str(DATA_DIR / "last_round.txt")
 USERS_FILE = str(DATA_DIR / "users.xlsx")
 PICKS_FILE = str(DATA_DIR / "picks.xlsx")
-STARRINGS_FILE = str(DATA_DIR / "starrings.xlsx")
+STARRINGS_FILE = str(DATA_DIR / "starrings_new.xlsx")
 PLAYERS_FILE = str(DATA_DIR / "players.xlsx")
 FIXTURES_FILE = str(DATA_DIR / "fixtures.xlsx")
 
@@ -154,55 +154,181 @@ def save_picks(df):
 # Starrings
 # =========================================================
 
-def load_starrings():
+# def load_starrings():
+#     df = load_starrings_df()
+#     if df.empty:
+#         return {}
+#     return dict(zip(df["Player"], df["starrings"]))
+
+def load_starrings(selection_period=None):
+    """
+    Returns:
+    {
+        "Player Name": starring_value
+    }
+
+    If selection_period is None:
+    returns all players with all columns.
+    """
+
     df = load_starrings_df()
+
     if df.empty:
         return {}
-    return dict(zip(df["Player"], df["starrings"]))
 
+    if selection_period is None:
+        return df.set_index("Player").to_dict(orient="index")
+
+    if selection_period not in df.columns:
+        return {}
+
+    filtered = df[
+        df[selection_period].notna()
+    ]
+
+    return dict(
+        zip(
+            filtered["Player"],
+            filtered[selection_period]
+        )
+    )
+
+# def load_starrings_df():
+#     if not os.path.exists(STARRINGS_FILE):
+#         return pd.DataFrame(columns=["Player", "starrings"])
+
+#     try:
+#         df = pd.read_excel(STARRINGS_FILE)
+#     except Exception as e:
+#         print(f"[WARN] Failed reading starrings file: {e}")
+#         return pd.DataFrame(columns=["Player", "starrings"])
+
+#     long_rows = []
+
+#     for col in df.columns:
+#         for player in df[col].dropna():
+#             player_name = str(player).strip()
+#             if player_name:
+#                 try:
+#                     starring_value = float(col)
+#                 except Exception:
+#                     starring_value = col
+
+#                 long_rows.append({
+#                     "Player": player_name,
+#                     "starrings": starring_value
+#                 })
+
+#     result = pd.DataFrame(long_rows)
+
+#     if not result.empty:
+#         result = result.drop_duplicates(subset=["Player"]).reset_index(drop=True)
+
+#     return result
 
 def load_starrings_df():
+
     if not os.path.exists(STARRINGS_FILE):
-        return pd.DataFrame(columns=["Player", "starrings"])
+        return pd.DataFrame(columns=["Player"])
 
     try:
         df = pd.read_excel(STARRINGS_FILE)
+        print(df.columns.tolist())
     except Exception as e:
         print(f"[WARN] Failed reading starrings file: {e}")
-        return pd.DataFrame(columns=["Player", "starrings"])
+        return pd.DataFrame(columns=["Player"])
 
-    long_rows = []
+    if "Player" not in df.columns:
+        raise ValueError("starrings.xlsx must contain a Player column")
 
-    for col in df.columns:
-        for player in df[col].dropna():
-            player_name = str(player).strip()
-            if player_name:
-                try:
-                    starring_value = float(col)
-                except Exception:
-                    starring_value = col
+    df["Player"] = (
+        df["Player"]
+        .astype(str)
+        .str.strip()
+    )
 
-                long_rows.append({
-                    "Player": player_name,
-                    "starrings": starring_value
-                })
+    # remove blank player names
+    df = df[df["Player"] != ""]
 
-    result = pd.DataFrame(long_rows)
+    # remove duplicate players
+    df = df.drop_duplicates(subset=["Player"], keep="last")
 
-    if not result.empty:
-        result = result.drop_duplicates(subset=["Player"]).reset_index(drop=True)
+    return df
 
-    return result
 
+def get_player_starring(player_name, selection_period):
+
+    starrings_df = load_starrings_df()
+
+    player_name = str(player_name).strip()
+    selection_period = str(selection_period).strip()
+
+    if selection_period not in starrings_df.columns:
+        return None
+
+    row = starrings_df[
+        starrings_df["Player"] == player_name
+    ]
+
+    if row.empty:
+        return None
+
+    value = row.iloc[0][selection_period]
+
+    if pd.isna(value):
+        return None
+
+    if str(value).strip() == "":
+        return None
+
+    return value
+
+
+
+def get_available_players_for_period(selection_period):
+
+    players_df = load_players()
+    starrings_df = load_starrings_df()
+
+    if selection_period not in starrings_df.columns:
+        return pd.DataFrame(
+            columns=players_df.columns.tolist() + ["starrings"]
+        )
+
+    # only players WITH a starring value for this period
+    valid_starrings = starrings_df[
+        starrings_df[selection_period].notna()
+    ][["Player", selection_period]].copy()
+
+    valid_starrings = valid_starrings[
+        valid_starrings[selection_period].astype(str).str.strip() != ""
+    ]
+
+    merged = players_df.merge(
+        valid_starrings,
+        on="Player",
+        how="inner"
+    )
+
+    merged.rename(
+        columns={selection_period: "starrings"},
+        inplace=True
+    )
+
+    return merged
 
 # =========================================================
 # Players
 # =========================================================
 
 def load_players():
+    # return _read_excel_or_empty(
+    #     PLAYERS_FILE,
+    #     ["Player No", "Player", "Team", "Stats Link", "starrings"]
+    # )
     return _read_excel_or_empty(
         PLAYERS_FILE,
-        ["Player No", "Player", "Team", "Stats Link", "starrings"]
+        ["Player No", "Player", "Team", "Stats Link"]
     )
 
 
@@ -210,10 +336,16 @@ def save_players(df):
     _atomic_write_excel(df, PLAYERS_FILE)
 
 
+# def load_seed_players():
+#     return _read_excel_or_empty(
+#         SEED_PLAYERS_FILE,
+#         ["Player No", "Player", "Team", "Stats Link", "starrings"]
+#     )
+
 def load_seed_players():
     return _read_excel_or_empty(
         SEED_PLAYERS_FILE,
-        ["Player No", "Player", "Team", "Stats Link", "starrings"]
+        ["Player No", "Player", "Team", "Stats Link"]
     )
 
 
@@ -449,6 +581,105 @@ def set_last_round(round_name):
 #     save_picks(picks_df)
 #     return total_score
 
+# def update_team_score(username, round_name):
+#     round_name = _normalize_round_name(round_name)
+#     if not round_name:
+#         return 0
+
+#     try:
+#         players_df = load_players()
+#         picks_df = load_picks()
+#     except Exception as e:
+#         print(f"[WARN] update_team_score load failed: {e}")
+#         return 0
+
+#     if "username" not in picks_df.columns:
+#         return 0
+
+#     # normalize usernames
+#     picks_df["username"] = picks_df["username"].astype(str).str.strip().str.lower()
+#     username = str(username).strip().lower()
+
+#     if username not in picks_df["username"].values:
+#         return 0
+
+#     user_index = picks_df[picks_df["username"] == username].index[0]
+
+#     # columns for team
+#     pick_cols = [f"{round_name}p{i}" for i in [1, 2, 3, 4]] + [f"{round_name}pw"]
+
+#     total_score = 0
+
+#     for col in pick_cols:
+#         if col not in picks_df.columns:
+#             continue
+
+#         player = picks_df.loc[user_index, col]
+
+#         if pd.isna(player) or player in ["", None]:
+#             continue
+
+#         player = str(player).strip()
+
+#         # find player row
+#         row = players_df[players_df["Player"].astype(str).str.strip() == player]
+
+#         if row.empty:
+#             continue
+
+#         score = row.iloc[0].get(round_name, 0)
+
+#         try:
+#             score = float(score)
+#         except Exception:
+#             score = 0
+
+#         # ⭐ CAPTAIN RULE
+#         if col.endswith("pw"):
+#             score *= 2
+
+#         total_score += score
+
+#     # ensure column exists for leaderboard storage
+#     if round_name not in picks_df.columns:
+#         picks_df[round_name] = 0
+
+#     picks_df.loc[user_index, round_name] = total_score
+
+#     save_picks(picks_df)
+
+#     return total_score
+
+def team_already_exists(username, selected_players, round_name):
+    round_name = _normalize_round_name(round_name)
+    if not round_name:
+        return False
+
+    picks_df = load_picks()
+    if "username" not in picks_df.columns:
+        return False
+
+    picks_df["username"] = picks_df["username"].astype(str).str.strip().str.lower()
+    username = str(username).strip().lower()
+
+    cols = [
+        f"{round_name}p1",
+        f"{round_name}p2",
+        f"{round_name}p3",
+        f"{round_name}p4",
+        f"{round_name}pw"
+    ]
+
+    for _, row in picks_df.iterrows():
+        existing_team = [row.get(col) for col in cols]
+        existing_username = str(row.get("username", "")).strip().lower()
+
+        if existing_team == selected_players and existing_username != username:
+            return True
+
+    return False
+
+
 def update_team_score(username, round_name):
     round_name = _normalize_round_name(round_name)
     if not round_name:
@@ -518,35 +749,54 @@ def update_team_score(username, round_name):
 
     return total_score
 
-def team_already_exists(username, selected_players, round_name):
-    round_name = _normalize_round_name(round_name)
-    if not round_name:
-        return False
 
+def recalculate_all_team_scores(round_name):
     picks_df = load_picks()
-    if "username" not in picks_df.columns:
-        return False
+    players_df = load_players()
 
     picks_df["username"] = picks_df["username"].astype(str).str.strip().str.lower()
-    username = str(username).strip().lower()
 
-    cols = [
-        f"{round_name}p1",
-        f"{round_name}p2",
-        f"{round_name}p3",
-        f"{round_name}p4",
-        f"{round_name}pw"
-    ]
+    score_col = round_name
+    picks_df[score_col] = 0
 
-    for _, row in picks_df.iterrows():
-        existing_team = [row.get(col) for col in cols]
-        existing_username = str(row.get("username", "")).strip().lower()
+    pick_cols = [f"{round_name}p{i}" for i in [1, 2, 3, 4]] + [f"{round_name}pw"]
 
-        if existing_team == selected_players and existing_username != username:
-            return True
+    for idx, row in picks_df.iterrows():
+        total = 0
 
-    return False
+        for col in pick_cols:
+            player = row.get(col)
 
+            if pd.isna(player) or player in ["", None]:
+                continue
+
+            player = str(player).strip()
+
+            match = players_df[
+                players_df["Player"].astype(str).str.strip() == player
+            ]
+
+            if match.empty:
+                continue
+
+            score = match.iloc[0].get(round_name, 0)
+
+            try:
+                score = float(score)
+            except Exception:
+                score = 0
+
+            # ⭐ CAPTAIN RULE
+            if col.endswith("pw"):
+                score *= 2
+
+            total += score
+
+        picks_df.at[idx, score_col] = total
+
+    save_picks(picks_df)
+
+    return picks_df
 
 # =========================================================
 # Fixtures
@@ -786,86 +1036,86 @@ def read_fixtures(file_path=None):
 #     print(f"[INFO] Scores updated for round: {period_name}")
 
 
-def calculate_monthly_player_scores(period_name):
-    """
-    Recalculates fantasy scores for all players using player_performances.xlsx
-    for a given selection period and stores results in players.xlsx.
+# def calculate_monthly_player_scores(period_name):
+#     """
+#     Recalculates fantasy scores for all players using player_performances.xlsx
+#     for a given selection period and stores results in players.xlsx.
 
-    Output column: period_name (e.g. 'May2026')
-    """
+#     Output column: period_name (e.g. 'May2026')
+#     """
 
-    period_name = _normalize_round_name(period_name)
-    if not period_name:
-        print("[WARN] No period_name provided")
-        return
+#     period_name = _normalize_round_name(period_name)
+#     if not period_name:
+#         print("[WARN] No period_name provided")
+#         return
 
-    # Load data
-    perf_df = pd.read_excel("player_performances.xlsx")
-    players_df = load_players()
+#     # Load data
+#     perf_df = pd.read_excel("player_performances.xlsx")
+#     players_df = load_players()
 
-    # Filter only this period
-    perf_df = perf_df[perf_df["selection_period"] == period_name].copy()
+#     # Filter only this period
+#     perf_df = perf_df[perf_df["selection_period"] == period_name].copy()
 
-    if perf_df.empty:
-        print(f"[WARN] No performance data for {period_name}")
-        return
+#     if perf_df.empty:
+#         print(f"[WARN] No performance data for {period_name}")
+#         return
 
-    # Ensure output column exists
-    if period_name not in players_df.columns:
-        players_df[period_name] = 0
+#     # Ensure output column exists
+#     if period_name not in players_df.columns:
+#         players_df[period_name] = 0
 
-    results = []
+#     results = []
 
-    # Group by player
-    for player_name, group in perf_df.groupby("Player"):
+#     # Group by player
+#     for player_name, group in perf_df.groupby("Player"):
 
-        total_score = 0
+#         total_score = 0
 
-        for _, row in group.iterrows():
+#         for _, row in group.iterrows():
 
-            try:
-                # Build minimal df_matches from row
-                df_matches = pd.DataFrame([row])
+#             try:
+#                 # Build minimal df_matches from row
+#                 df_matches = pd.DataFrame([row])
 
-                # Build minimal df_batting (only SR logic uses it)
-                df_batting = pd.DataFrame([{
-                    "SR": row.get("SR", None),
-                    "Balls": row.get("balls", None)
-                }])
+#                 # Build minimal df_batting (only SR logic uses it)
+#                 df_batting = pd.DataFrame([{
+#                     "SR": row.get("SR", None),
+#                     "Balls": row.get("balls", None)
+#                 }])
 
-                # How-out approximation (safe fallback)
-                howout_counts = pd.DataFrame({
-                    "How Out": [row.get("opposition", "")],
-                    "Count": [1]
-                })
+#                 # How-out approximation (safe fallback)
+#                 howout_counts = pd.DataFrame({
+#                     "How Out": [row.get("opposition", "")],
+#                     "Count": [1]
+#                 })
 
-                starring_level = row.get("starrings", 1)
+#                 starring_level = row.get("starrings", 1)
 
-                score, _ = calculate_fantasy_score(
-                    df_matches=df_matches,
-                    df_batting=df_batting,
-                    howout_counts=howout_counts,
-                    starring_level=starring_level
-                )
+#                 score, _ = calculate_fantasy_score(
+#                     df_matches=df_matches,
+#                     df_batting=df_batting,
+#                     howout_counts=howout_counts,
+#                     starring_level=starring_level
+#                 )
 
-                total_score += float(score)
+#                 total_score += float(score)
 
-            except Exception as e:
-                print(f"[WARN] Skipping row for {player_name}: {e}")
-                continue
+#             except Exception as e:
+#                 print(f"[WARN] Skipping row for {player_name}: {e}")
+#                 continue
 
-        results.append((player_name, total_score))
+#         results.append((player_name, total_score))
 
-    # Write back into players.xlsx
-    for player_name, score in results:
-        players_df.loc[
-            players_df["Player"] == player_name,
-            period_name
-        ] = score
+#     # Write back into players.xlsx
+#     for player_name, score in results:
+#         players_df.loc[
+#             players_df["Player"] == player_name,
+#             period_name
+#         ] = score
 
-    save_players(players_df)
+#     save_players(players_df)
 
-    print(f"[INFO] Updated fantasy scores for {period_name}")
+#     print(f"[INFO] Updated fantasy scores for {period_name}")
 
 
 # =========================================================
@@ -878,6 +1128,12 @@ def generate_random_team(df, slot_rules, existing_teams):
     slot_rules: dict mapping slot index to starrings filter (or 'any')
     existing_teams: list of sets representing all teams already submitted
     """
+
+    df = df[df["starrings"].notna()].copy()
+
+    df = df[
+        df["starrings"].astype(str).str.strip() != ""
+    ]
     max_attempts = 100
 
     if "Player" not in df.columns:
@@ -1008,36 +1264,94 @@ def seed_data_from_repo():
             print(f"Skipped existing file: {dst}")
 
 
+# def build_players_df_from_starrings():
+#     starrings_df = load_starrings_df().copy()
+#     players_df = load_players().copy()
+
+#     starrings_df["Player"] = starrings_df["Player"].astype(str).str.strip()
+#     players_df["Player"] = players_df["Player"].astype(str).str.strip()
+
+#     starrings_df = starrings_df.drop_duplicates(subset=["Player"])
+
+#     # Keep ONLY players that are in starrings
+#     players_df = players_df[players_df["Player"].isin(starrings_df["Player"])]
+
+#     # Add missing players
+#     missing_players = starrings_df[~starrings_df["Player"].isin(players_df["Player"])]
+
+#     if not missing_players.empty:
+#         new_rows = pd.DataFrame({
+#             "Player No": None,
+#             "Player": missing_players["Player"],
+#             "Team": None,
+#             "Stats Link": None,
+#             "starrings": missing_players["starrings"]
+#         })
+#         players_df = pd.concat([players_df, new_rows], ignore_index=True)
+
+#     # Update starrings values
+#     players_df = players_df.drop(columns=["starrings"], errors="ignore")
+#     players_df = players_df.merge(starrings_df, on="Player", how="left")
+
+#     return players_df
+
 def build_players_df_from_starrings():
+
     starrings_df = load_starrings_df().copy()
     players_df = load_players().copy()
 
-    starrings_df["Player"] = starrings_df["Player"].astype(str).str.strip()
-    players_df["Player"] = players_df["Player"].astype(str).str.strip()
+    starrings_df["Player"] = (
+        starrings_df["Player"]
+        .astype(str)
+        .str.strip()
+    )
 
-    starrings_df = starrings_df.drop_duplicates(subset=["Player"])
+    players_df["Player"] = (
+        players_df["Player"]
+        .astype(str)
+        .str.strip()
+    )
 
-    # Keep ONLY players that are in starrings
-    players_df = players_df[players_df["Player"].isin(starrings_df["Player"])]
+    starrings_df = starrings_df.drop_duplicates(
+        subset=["Player"]
+    )
 
-    # Add missing players
-    missing_players = starrings_df[~starrings_df["Player"].isin(players_df["Player"])]
+    starrings_players = set(
+        starrings_df["Player"].tolist()
+    )
+
+    # keep only players in starrings
+    players_df = players_df[
+        players_df["Player"].isin(starrings_players)
+    ].copy()
+
+    # add missing players
+    existing_players = set(players_df["Player"].tolist())
+
+    missing_players = starrings_df[
+        ~starrings_df["Player"].isin(existing_players)
+    ]
 
     if not missing_players.empty:
+
         new_rows = pd.DataFrame({
             "Player No": None,
             "Player": missing_players["Player"],
             "Team": None,
             "Stats Link": None,
-            "starrings": missing_players["starrings"]
         })
-        players_df = pd.concat([players_df, new_rows], ignore_index=True)
 
-    # Update starrings values
-    players_df = players_df.drop(columns=["starrings"], errors="ignore")
-    players_df = players_df.merge(starrings_df, on="Player", how="left")
+        players_df = pd.concat(
+            [players_df, new_rows],
+            ignore_index=True
+        )
+
+    players_df = players_df.sort_values(
+        "Player"
+    ).reset_index(drop=True)
 
     return players_df
+
 
 def save_uploaded_starrings_file(upload_file):
     """
@@ -1068,67 +1382,147 @@ def write_players_to_seed(df):
     _atomic_write_excel(df, SEED_PLAYERS_FILE)
 
 
+# def write_players_to_seed_from_starrings():
+#     df = build_players_df_from_starrings()
+#     write_players_to_seed(df)
+#     return df
+
 def write_players_to_seed_from_starrings():
+
     df = build_players_df_from_starrings()
+
     write_players_to_seed(df)
+
     return df
 
 
+# def sync_live_players_from_starrings():
+#     """
+#     Rebuild live players.xlsx from current starrings:
+#     - remove players not in starrings
+#     - keep existing metadata for players that remain
+#     - add new players from starrings
+#     - overwrite starrings values from starrings.xlsx
+#     """
+#     starrings_df = load_starrings_df().copy()
+#     players_df = load_players().copy()
+
+#     if starrings_df.empty:
+#         raise ValueError("starrings.xlsx is empty")
+
+#     starrings_df["Player"] = starrings_df["Player"].astype(str).str.strip()
+#     players_df["Player"] = players_df["Player"].astype(str).str.strip()
+
+#     starrings_df = starrings_df.drop_duplicates(subset=["Player"])
+#     starrings_players = set(starrings_df["Player"].tolist())
+
+#     # 1) keep only players that still exist in starrings
+#     players_df = players_df[players_df["Player"].isin(starrings_players)].copy()
+
+#     # 2) add any new players from starrings
+#     existing_players = set(players_df["Player"].tolist())
+#     missing_players = starrings_df[~starrings_df["Player"].isin(existing_players)]
+
+#     if not missing_players.empty:
+#         new_rows = pd.DataFrame({
+#             "Player No": None,
+#             "Player": missing_players["Player"].tolist(),
+#             "Team": None,
+#             "Stats Link": None,
+#             "starrings": missing_players["starrings"].tolist(),
+#         })
+
+#         # preserve any extra columns already in players_df
+#         for col in players_df.columns:
+#             if col not in new_rows.columns:
+#                 new_rows[col] = None
+
+#         new_rows = new_rows[players_df.columns]
+#         players_df = pd.concat([players_df, new_rows], ignore_index=True)
+
+#     # 3) overwrite starrings values from starrings.xlsx
+#     starrings_map = starrings_df.set_index("Player")["starrings"].to_dict()
+#     players_df["starrings"] = players_df["Player"].map(starrings_map)
+
+#     # optional: sort for neatness
+#     players_df = players_df.sort_values("Player").reset_index(drop=True)
+
+#     save_players(players_df)
+#     return players_df
+
 def sync_live_players_from_starrings():
     """
-    Rebuild live players.xlsx from current starrings:
+    Rebuild live players.xlsx from starrings.xlsx
+
     - remove players not in starrings
-    - keep existing metadata for players that remain
-    - add new players from starrings
-    - overwrite starrings values from starrings.xlsx
+    - keep existing metadata
+    - add new players
     """
+
     starrings_df = load_starrings_df().copy()
     players_df = load_players().copy()
 
     if starrings_df.empty:
         raise ValueError("starrings.xlsx is empty")
 
-    starrings_df["Player"] = starrings_df["Player"].astype(str).str.strip()
-    players_df["Player"] = players_df["Player"].astype(str).str.strip()
+    starrings_df["Player"] = (
+        starrings_df["Player"]
+        .astype(str)
+        .str.strip()
+    )
 
-    starrings_df = starrings_df.drop_duplicates(subset=["Player"])
-    starrings_players = set(starrings_df["Player"].tolist())
+    players_df["Player"] = (
+        players_df["Player"]
+        .astype(str)
+        .str.strip()
+    )
 
-    # 1) keep only players that still exist in starrings
-    players_df = players_df[players_df["Player"].isin(starrings_players)].copy()
+    starrings_players = set(
+        starrings_df["Player"].tolist()
+    )
 
-    # 2) add any new players from starrings
-    existing_players = set(players_df["Player"].tolist())
-    missing_players = starrings_df[~starrings_df["Player"].isin(existing_players)]
+    # keep only players still in starrings
+    players_df = players_df[
+        players_df["Player"].isin(starrings_players)
+    ].copy()
+
+    existing_players = set(
+        players_df["Player"].tolist()
+    )
+
+    # add new players
+    missing_players = starrings_df[
+        ~starrings_df["Player"].isin(existing_players)
+    ]
 
     if not missing_players.empty:
+
         new_rows = pd.DataFrame({
             "Player No": None,
             "Player": missing_players["Player"].tolist(),
             "Team": None,
             "Stats Link": None,
-            "starrings": missing_players["starrings"].tolist(),
         })
 
-        # preserve any extra columns already in players_df
+        # preserve extra columns
         for col in players_df.columns:
             if col not in new_rows.columns:
                 new_rows[col] = None
 
         new_rows = new_rows[players_df.columns]
-        players_df = pd.concat([players_df, new_rows], ignore_index=True)
 
-    # 3) overwrite starrings values from starrings.xlsx
-    starrings_map = starrings_df.set_index("Player")["starrings"].to_dict()
-    players_df["starrings"] = players_df["Player"].map(starrings_map)
+        players_df = pd.concat(
+            [players_df, new_rows],
+            ignore_index=True
+        )
 
-    # optional: sort for neatness
-    players_df = players_df.sort_values("Player").reset_index(drop=True)
+    players_df = players_df.sort_values(
+        "Player"
+    ).reset_index(drop=True)
 
     save_players(players_df)
+
     return players_df
-
-
 
 
 HEADERS = {
@@ -1230,7 +1624,8 @@ def scrape_player_performances(
 
         player_name = player.get("Player")
         player_no = player.get("Player No")
-        starring = player.get("starrings")
+        # starring = player.get("starrings")
+        starring = None
         team = player.get("Team")
         stats_link = player.get("Stats Link")
 
@@ -1395,7 +1790,15 @@ def calculate_monthly_player_scores(period_name):
                 "Count": [1]
             })
 
-            starring_level = row.get("starrings", 1)
+            # starring_level = row.get("starrings", 1)
+            starring_level = get_player_starring(
+                player,
+                period_name
+            )
+
+            if starring_level is None:
+                continue
+
 
             score, _ = calculate_fantasy_score(
                 df_matches=df_matches,
@@ -1451,7 +1854,14 @@ def add_match_fantasy_points(player_perf_file="player_performances.xlsx"):
             "Count": [1]
         })
 
-        starring_level = row.get("starrings", 1)
+        # starring_level = row.get("starrings", 1)
+        starring_level = get_player_starring(
+            row.get("Player"),
+            row.get("selection_period")
+        )
+
+        if starring_level is None:
+            starring_level = 1
 
         try:
             score, _ = calculate_fantasy_score(
@@ -1579,46 +1989,46 @@ def get_display_period():
 #     save_picks(picks_df)
 #     return picks_df
 
-def recalculate_all_team_scores(round_name):
-    picks_df = load_picks()
-    players_df = load_players()
+# def recalculate_all_team_scores(round_name):
+#     picks_df = load_picks()
+#     players_df = load_players()
 
-    picks_df["username"] = picks_df["username"].astype(str).str.strip().str.lower()
+#     picks_df["username"] = picks_df["username"].astype(str).str.strip().str.lower()
 
-    score_col = round_name
-    picks_df[score_col] = 0
+#     score_col = round_name
+#     picks_df[score_col] = 0
 
-    pick_cols = [f"{round_name}p{i}" for i in [1, 2, 3, 4]] + [f"{round_name}pw"]
+#     pick_cols = [f"{round_name}p{i}" for i in [1, 2, 3, 4]] + [f"{round_name}pw"]
 
-    for idx, row in picks_df.iterrows():
-        total = 0
+#     for idx, row in picks_df.iterrows():
+#         total = 0
 
-        for col in pick_cols:
-            player = row.get(col)
+#         for col in pick_cols:
+#             player = row.get(col)
 
-            if pd.isna(player) or player in ["", None]:
-                continue
+#             if pd.isna(player) or player in ["", None]:
+#                 continue
 
-            player = str(player).strip()
+#             player = str(player).strip()
 
-            match = players_df[players_df["Player"].astype(str).str.strip() == player]
-            if match.empty:
-                continue
+#             match = players_df[players_df["Player"].astype(str).str.strip() == player]
+#             if match.empty:
+#                 continue
 
-            score = match.iloc[0].get(round_name, 0)
+#             score = match.iloc[0].get(round_name, 0)
 
-            try:
-                score = float(score)
-            except Exception:
-                score = 0
+#             try:
+#                 score = float(score)
+#             except Exception:
+#                 score = 0
 
-            # ⭐ CAPTAIN RULE
-            if col.endswith("pw"):
-                score *= 2
+#             # ⭐ CAPTAIN RULE
+#             if col.endswith("pw"):
+#                 score *= 2
 
-            total += score
+#             total += score
 
-        picks_df.at[idx, score_col] = total
+#         picks_df.at[idx, score_col] = total
 
-    save_picks(picks_df)
-    return picks_df
+#     save_picks(picks_df)
+#     return picks_df
