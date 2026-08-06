@@ -475,7 +475,13 @@ def dashboard():
     # FIX 1: PLAYER LEADERBOARD
     # ============================
     try:
-        period_col = round_name  # ✅ CHANGED (was *_score)
+        # period_col = round_name  # ✅ CHANGED (was *_score)
+
+        period_col = (
+            f"{round_name}_score"
+            if f"{round_name}_score" in players_df.columns
+            else round_name
+        )
 
         if period_col in players_df.columns:
             players_df[period_col] = pd.to_numeric(
@@ -536,7 +542,12 @@ def dashboard():
 
     if user_picks and round_name:
         try:
-            period_col = round_name  # ✅ CHANGED
+            # period_col = round_name  # ✅ CHANGED
+            period_col = (
+                f"{round_name}_score"
+                if f"{round_name}_score" in players_df.columns
+                else round_name
+            )
 
             for player in user_picks:
                 player_col = "player" if "player" in players_df.columns else "Player"
