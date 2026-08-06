@@ -552,11 +552,22 @@ def dashboard():
             for player in user_picks:
                 player_scores[player] = 0
 
+    # # ============================
+    # # TEAM SCORE (UNCHANGED)
+    # # ============================
+    # try:
+    #     user_score = update_team_score(username, round_name) if round_name else 0
+    # except Exception:
+    #     user_score = 0
+
     # ============================
-    # TEAM SCORE (UNCHANGED)
+    # TOTAL SCORE ACROSS ALL ROUNDS
     # ============================
     try:
-        user_score = update_team_score(username, round_name) if round_name else 0
+        user_score = sum(
+            month["Fantasy Score"]
+            for month in monthly_scores
+        )
     except Exception:
         user_score = 0
 
