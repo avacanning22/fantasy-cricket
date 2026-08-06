@@ -538,30 +538,54 @@ def dashboard():
     # ============================
     # FIX 3: PLAYER SCORES DISPLAY
     # ============================
+    # player_scores = {}
+
+    # if user_picks and round_name:
+    #     try:
+    #         # period_col = round_name  # ✅ CHANGED
+    #         period_col = (
+    #             f"{round_name}_score"
+    #             if f"{round_name}_score" in players_df.columns
+    #             else round_name
+    #         )
+
+    #         for player in user_picks:
+    #             player_col = "player" if "player" in players_df.columns else "Player"
+
+    #             score_series = players_df.loc[
+    #                 players_df[player_col] == player,
+    #                 period_col
+    #             ]
+    #             player_scores[player] = score_series.iloc[0] if not score_series.empty else 0
+
+    #     except Exception as e:
+    #         print("Error calculating player scores:", e)
+    #         for player in user_picks:
+    #             player_scores[player] = 0
+
     player_scores = {}
 
-    if user_picks and round_name:
-        try:
-            # period_col = round_name  # ✅ CHANGED
-            period_col = (
-                f"{round_name}_score"
-                if f"{round_name}_score" in players_df.columns
-                else round_name
-            )
+    player_col = "player" if "player" in players_df.columns else "Player"
 
-            for player in user_picks:
-                player_col = "player" if "player" in players_df.columns else "Player"
+    if user_picks:
+        for player in user_picks:
 
-                score_series = players_df.loc[
-                    players_df[player_col] == player,
-                    period_col
-                ]
-                player_scores[player] = score_series.iloc[0] if not score_series.empty else 0
+            row = players_df[players_df[player_col] == player]
 
-        except Exception as e:
-            print("Error calculating player scores:", e)
-            for player in user_picks:
+            if row.empty:
                 player_scores[player] = 0
+                continue
+
+            score = 0
+
+            for col in (round_name, f"{round_name}_score"):
+                if col in players_df.columns:
+                    value = pd.to_numeric(row.iloc[0][col], errors="coerce")
+                    if not pd.isna(value):
+                        score = value
+                        break
+
+            player_scores[player] = score
 
     # # ============================
     # # TEAM SCORE (UNCHANGED)
