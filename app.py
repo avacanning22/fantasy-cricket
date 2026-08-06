@@ -630,13 +630,40 @@ def dashboard():
                 # else:
                 #     score = 0
 
+                # score = 0
+
+                # for col in (r, f"{r}_score"):
+                #     if col in players_df.columns:
+                #         value = pd.to_numeric(player_row.iloc[0][col], errors="coerce")
+                #         if not pd.isna(value):
+                #             score = value
+                #         break
+
+                # breakdown[player] = score
+
+                player_col = "player" if "player" in players_df.columns else "Player"
+
+                player_row = players_df[
+                    players_df[player_col].astype(str).str.strip() == str(player).strip()
+                ]
+
+                if player_row.empty:
+                    print(f"[WARN] Player not found in players.xlsx: {player}")
+                    breakdown[player] = 0
+                    continue
+
                 score = 0
 
                 for col in (r, f"{r}_score"):
                     if col in players_df.columns:
-                        value = pd.to_numeric(player_row.iloc[0][col], errors="coerce")
+                        value = pd.to_numeric(
+                            player_row.iloc[0][col],
+                            errors="coerce"
+                        )
+
                         if not pd.isna(value):
-                            score = value
+                            score = float(value)
+
                         break
 
                 breakdown[player] = score
