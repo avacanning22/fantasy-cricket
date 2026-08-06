@@ -576,6 +576,8 @@ def dashboard():
         if any(p == "X" for p in latest_team):
             missed_round = True
 
+    # print(players_df.columns.tolist())
+
     # monthly_scores = []
 
     # if user_picks and user_row is not None:
@@ -610,12 +612,21 @@ def dashboard():
 
                 player_row = players_df[players_df["Player"] == player]
 
-                if not player_row.empty and r in players_df.columns:
-                    score = player_row.iloc[0][r]
-                    if pd.isna(score):
-                        score = 0
-                else:
-                    score = 0
+                # if not player_row.empty and r in players_df.columns:
+                #     score = player_row.iloc[0][r]
+                #     if pd.isna(score):
+                #         score = 0
+                # else:
+                #     score = 0
+
+                score = 0
+
+                for col in (r, f"{r}_score"):
+                    if col in players_df.columns:
+                        value = pd.to_numeric(player_row.iloc[0][col], errors="coerce")
+                        if not pd.isna(value):
+                            score = value
+                        break
 
                 breakdown[player] = score
 
