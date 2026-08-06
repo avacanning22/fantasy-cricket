@@ -565,20 +565,52 @@ def dashboard():
         if any(p == "X" for p in latest_team):
             missed_round = True
 
+    # monthly_scores = []
+
+    # if user_picks and user_row is not None:
+    #     last_rounds = get_all_rounds_for_user(username)
+    #     for r in last_rounds:
+    #         round_cols = [f"{r}p{i}" for i in range(1, 5)] + [f"{r}pw"]
+    #         players = [user_row.get(c) for c in round_cols]
+
+    #         breakdown = {p: player_scores.get(p, 0) for p in players}
+    #         score = sum(breakdown.values())
+
+    #         monthly_scores.append({
+    #             "Month": r,
+    #             "Fantasy Score": score,
+    #             "Breakdown": breakdown
+    #         })
+
     monthly_scores = []
 
-    if user_picks and user_row is not None:
+    if user_row is not None:
         last_rounds = get_all_rounds_for_user(username)
+
         for r in last_rounds:
             round_cols = [f"{r}p{i}" for i in range(1, 5)] + [f"{r}pw"]
             players = [user_row.get(c) for c in round_cols]
 
-            breakdown = {p: player_scores.get(p, 0) for p in players}
-            score = sum(breakdown.values())
+            breakdown = {}
+
+            for player in players:
+                if pd.isna(player):
+                    continue
+
+                player_row = players_df[players_df["Player"] == player]
+
+                if not player_row.empty and r in players_df.columns:
+                    score = player_row.iloc[0][r]
+                    if pd.isna(score):
+                        score = 0
+                else:
+                    score = 0
+
+                breakdown[player] = score
 
             monthly_scores.append({
                 "Month": r,
-                "Fantasy Score": score,
+                "Fantasy Score": sum(breakdown.values()),
                 "Breakdown": breakdown
             })
 
