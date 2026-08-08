@@ -2753,6 +2753,69 @@ def admin_dashboard():
         calculate_monthly_player_scores(current_round_temp)
     recalculate_all_team_scores(current_round_temp)
 
+    # ============================
+    # ADMIN USER SEASON LEADERBOARD
+    # ============================
+    try:
+        # Reload picks after all scores have been recalculated
+        picks_df = normalize_username_column(load_picks())
+
+        # Find all round score columns, e.g.
+        # May2026_score, June2026_score, July2026_score, etc.
+        score_columns = [
+            col for col in picks_df.columns
+            if str(col).endswith("_score")
+        ]
+
+        if score_columns:
+            # Convert all score columns to numbers
+            for col in score_columns:
+                picks_df[col] = pd.to_numeric(
+                    picks_df[col],
+                    errors="coerce"
+                ).fillna(0)
+
+            # Total all round scores for each user
+            picks_df["season_total"] = picks_df[score_columns].sum(axis=1)
+
+            # Create ranked leaderboard
+            user_leaderboard_df = (
+                picks_df[["username", "season_total"]]
+                .copy()
+                .sort_values(
+                    by="season_total",
+                    ascending=False
+                )
+                .reset_index(drop=True)
+            )
+
+            # Add ranking position
+            user_leaderboard_df.insert(
+                0,
+                "Rank",
+                range(1, len(user_leaderboard_df) + 1)
+            )
+
+            user_leaderboard_df = user_leaderboard_df.rename(
+                columns={
+                    "username": "Participant",
+                    "season_total": "Season Total"
+                }
+            )
+
+            # Convert to records for Jinja
+            user_leaderboard = (
+                user_leaderboard_df
+                .to_dict(orient="records")
+            )
+
+        else:
+            user_leaderboard = []
+
+    except Exception as e:
+        print("Admin user leaderboard error:", e)
+        user_leaderboard = []
+
 
     current_round = get_active_round()
     months = ["May", "June", "July", "August"]
@@ -2958,14 +3021,23 @@ def admin_dashboard():
             flash(f"New selection '{next_round_name}' opened!", "success")
             return redirect(url_for("admin_dashboard"))
 
+    # return render_template(
+    #     "admin_dashboard.html",
+    #     picks=picks_df.to_dict(orient="records"),
+    #     users=users_df.to_dict(orient="records"),
+    #     players=players_df.to_dict(orient="records") if players_df is not None else [],
+    #     current_round=current_round,
+    #     player_performances=player_performances_df.to_dict(orient="records")  # ✅ ADD
+    # )
     return render_template(
-        "admin_dashboard.html",
-        picks=picks_df.to_dict(orient="records"),
-        users=users_df.to_dict(orient="records"),
-        players=players_df.to_dict(orient="records") if players_df is not None else [],
-        current_round=current_round,
-        player_performances=player_performances_df.to_dict(orient="records")  # ✅ ADD
-    )
+            "admin_dashboard.html",
+            picks=picks_df.to_dict(orient="records"),
+            users=users_df.to_dict(orient="records"),
+            players=players_df.to_dict(orient="records") if players_df is not None else [],
+            current_round=current_round,
+            player_performances=player_performances_df.to_dict(orient="records"),
+            user_leaderboard=user_leaderboard
+        )
 
 
 @app.route("/admin/logout")
