@@ -712,6 +712,610 @@ def register():
 #     )
 
 
+# @app.route("/dashboard")
+# def dashboard():
+#     if "username" not in session:
+#         return redirect(url_for("login"))
+
+#     username = normalize_username(session["username"])
+
+#     # --------------------------------------------------
+#     # LOAD CURRENT ROUND / DATA
+#     # --------------------------------------------------
+#     current_round_temp = get_active_round() or get_last_round()
+
+#     if current_round_temp:
+#         try:
+#             calculate_monthly_player_scores(current_round_temp)
+#         except Exception as e:
+#             print("calculate_monthly_player_scores error:", e)
+
+#         try:
+#             recalculate_all_team_scores(current_round_temp)
+#         except Exception as e:
+#             print("recalculate_all_team_scores error:", e)
+
+#     picks_df = normalize_username_column(load_picks())
+#     players_df = load_players()
+
+#     # --------------------------------------------------
+#     # NORMALISE PLAYER COLUMN
+#     # --------------------------------------------------
+#     player_col = "player" if "player" in players_df.columns else "Player"
+
+#     if player_col not in players_df.columns:
+#         print("ERROR: No player column found in players.xlsx")
+#         print("Players columns:", players_df.columns.tolist())
+
+#         player_leaderboard = []
+#         player_scores = {}
+#     else:
+#         players_df[player_col] = (
+#             players_df[player_col]
+#             .astype(str)
+#             .str.strip()
+#         )
+
+#     # --------------------------------------------------
+#     # USER ROW
+#     # --------------------------------------------------
+#     user_row_df = picks_df[picks_df["username"] == username]
+#     user_row = user_row_df.iloc[0] if not user_row_df.empty else None
+
+#     active_round = get_active_round()
+#     last_round = get_last_round()
+
+#     # --------------------------------------------------
+#     # NO ROUND
+#     # --------------------------------------------------
+#     if not active_round and not last_round:
+#         return redirect(url_for("no_round"))
+
+#     round_name = active_round if active_round else last_round
+
+#     # --------------------------------------------------
+#     # IF ROUND IS ACTIVE, MAKE SURE USER HAS SUBMITTED
+#     # --------------------------------------------------
+#     if active_round:
+#         round_cols = [
+#             f"{active_round}p1",
+#             f"{active_round}p2",
+#             f"{active_round}p3",
+#             f"{active_round}p4",
+#             f"{active_round}pw"
+#         ]
+
+#         user_has_submitted = (
+#             user_row is not None and
+#             all(
+#                 pd.notna(user_row.get(c)) and
+#                 user_row.get(c) not in ["", None]
+#                 for c in round_cols
+#             )
+#         )
+
+#         if not user_has_submitted:
+#             return redirect(url_for("select_players"))
+
+#     # --------------------------------------------------
+#     # GET USER PICKS
+#     # --------------------------------------------------
+#     latest_cols = [
+#         "latestp1",
+#         "latestp2",
+#         "latestp3",
+#         "latestp4",
+#         "latestpw"
+#     ]
+
+#     user_picks = []
+#     missed_round = False
+
+#     if active_round:
+
+#         if user_row is not None:
+#             round_cols = [
+#                 f"{active_round}p1",
+#                 f"{active_round}p2",
+#                 f"{active_round}p3",
+#                 f"{active_round}p4",
+#                 f"{active_round}pw"
+#             ]
+
+#             user_picks = [
+#                 user_row.get(c)
+#                 for c in round_cols
+#             ]
+
+#     else:
+
+#         if user_row is not None:
+
+#             latest_team = [
+#                 user_row.get(c, None)
+#                 for c in latest_cols
+#             ]
+
+#             if any(p == "X" for p in latest_team):
+
+#                 last_round = get_last_round()
+
+#                 if not last_round:
+
+#                     flash(
+#                         "No last round found to assign random team.",
+#                         "danger"
+#                     )
+
+#                     user_picks = [None] * 5
+
+#                 else:
+
+#                     round_cols = [
+#                         f"{last_round}p1",
+#                         f"{last_round}p2",
+#                         f"{last_round}p3",
+#                         f"{last_round}p4",
+#                         f"{last_round}pw"
+#                     ]
+
+#                     existing_teams = []
+
+#                     for _, row in picks_df.iterrows():
+
+#                         team = set([
+#                             row.get(c)
+#                             for c in round_cols
+#                             if pd.notna(row.get(c))
+#                             and row.get(c) not in ["", None]
+#                         ])
+
+#                         if team:
+#                             existing_teams.append(team)
+
+#                     random_team = generate_random_team(
+#                         players_df,
+#                         slot_rules,
+#                         existing_teams
+#                     )
+
+#                     for i, col in enumerate(round_cols):
+#                         picks_df.loc[
+#                             picks_df["username"] == username,
+#                             col
+#                         ] = random_team[i]
+
+#                     for i, col in enumerate(latest_cols):
+#                         picks_df.loc[
+#                             picks_df["username"] == username,
+#                             col
+#                         ] = random_team[i]
+
+#                     save_picks(picks_df)
+
+#                     try:
+#                         update_team_score(
+#                             username,
+#                             last_round
+#                         )
+#                     except Exception as e:
+#                         print(
+#                             "update_team_score error:",
+#                             e
+#                         )
+
+#                     picks_df = normalize_username_column(
+#                         load_picks()
+#                     )
+
+#                     user_row_df = picks_df[
+#                         picks_df["username"] == username
+#                     ]
+
+#                     if not user_row_df.empty:
+#                         user_row = user_row_df.iloc[0]
+
+#                     user_picks = random_team
+#                     missed_round = True
+
+#                     flash(
+#                         f"You were assigned a random team for "
+#                         f"{last_round} because the selection window "
+#                         f"has closed.",
+#                         "info"
+#                     )
+
+#             else:
+#                 user_picks = latest_team
+
+#         else:
+
+#             flash(
+#                 "You did not submit a team in the last round.",
+#                 "warning"
+#             )
+
+#             user_picks = [None] * 5
+
+#     # ==================================================
+#     # DETERMINE THE CORRECT PLAYER SCORE COLUMN
+#     # ==================================================
+#     #
+#     # IMPORTANT:
+#     #
+#     # Your players.xlsx is using columns such as:
+#     #
+#     #     May2026
+#     #     June2026
+#     #     July2026
+#     #     August2026
+#     #
+#     # Those are the actual player fantasy-score columns.
+#     #
+#     # Do NOT prefer August2026_score here because that can
+#     # contain zeros even when August2026 contains the real
+#     # scores.
+#     #
+#     # ==================================================
+
+#     player_period_col = None
+
+#     if round_name:
+
+#         # FIRST: use the actual period column
+#         if round_name in players_df.columns:
+#             player_period_col = round_name
+
+#         # FALLBACK: old *_score format
+#         elif f"{round_name}_score" in players_df.columns:
+#             player_period_col = f"{round_name}_score"
+
+#     print(
+#         "Dashboard round:",
+#         round_name,
+#         "| player score column:",
+#         player_period_col
+#     )
+
+#     # --------------------------------------------------
+#     # CONVERT PLAYER SCORE COLUMN TO NUMERIC
+#     # --------------------------------------------------
+#     if player_period_col and player_period_col in players_df.columns:
+
+#         players_df[player_period_col] = pd.to_numeric(
+#             players_df[player_period_col],
+#             errors="coerce"
+#         ).fillna(0)
+
+#     # ==================================================
+#     # TOP PLAYERS LEADERBOARD
+#     # ==================================================
+#     player_leaderboard = []
+
+#     try:
+
+#         if (
+#             player_period_col
+#             and player_period_col in players_df.columns
+#             and player_col in players_df.columns
+#         ):
+
+#             top_players = (
+#                 players_df[
+#                     [player_col, player_period_col]
+#                 ]
+#                 .copy()
+#             )
+
+#             top_players[player_period_col] = pd.to_numeric(
+#                 top_players[player_period_col],
+#                 errors="coerce"
+#             ).fillna(0)
+
+#             top_players = top_players.sort_values(
+#                 by=player_period_col,
+#                 ascending=False
+#             ).head(10)
+
+#             player_leaderboard = (
+#                 top_players
+#                 .rename(
+#                     columns={
+#                         player_col: "Player",
+#                         player_period_col: "Points"
+#                     }
+#                 )
+#                 .to_dict(orient="records")
+#             )
+
+#         print(
+#             "Top player leaderboard:",
+#             player_leaderboard
+#         )
+
+#     except Exception as e:
+
+#         print(
+#             "Player leaderboard error:",
+#             e
+#         )
+
+#         player_leaderboard = []
+
+#     # ==================================================
+#     # USER LEADERBOARD
+#     # ==================================================
+#     #
+#     # Team scores are stored in picks.xlsx using the
+#     # period name, e.g. August2026.
+#     #
+#     # Prefer that column.
+#     #
+#     # ==================================================
+
+#     user_leaderboard = []
+
+#     try:
+
+#         user_score_col = None
+
+#         if round_name in picks_df.columns:
+#             user_score_col = round_name
+
+#         elif f"{round_name}_score" in picks_df.columns:
+#             user_score_col = f"{round_name}_score"
+
+#         if user_score_col:
+
+#             picks_df[user_score_col] = pd.to_numeric(
+#                 picks_df[user_score_col],
+#                 errors="coerce"
+#             ).fillna(0)
+
+#             user_leaderboard_df = (
+#                 picks_df[
+#                     ["username", user_score_col]
+#                 ]
+#                 .sort_values(
+#                     user_score_col,
+#                     ascending=False
+#                 )
+#                 .head(5)
+#             )
+
+#             user_leaderboard_df = (
+#                 user_leaderboard_df.rename(
+#                     columns={
+#                         "username": "Participant",
+#                         user_score_col: "Points"
+#                     }
+#                 )
+#             )
+
+#             user_leaderboard = (
+#                 user_leaderboard_df
+#                 .to_dict(orient="records")
+#             )
+
+#     except Exception as e:
+
+#         print(
+#             "User leaderboard error:",
+#             e
+#         )
+
+#         user_leaderboard = []
+
+#     # ==================================================
+#     # CURRENT TEAM PLAYER SCORES
+#     # ==================================================
+
+#     player_scores = {}
+
+#     if user_picks and player_period_col and player_col in players_df.columns:
+
+#         for player in user_picks:
+
+#             # Ignore blank / NaN picks
+#             if player is None:
+#                 continue
+
+#             try:
+#                 if pd.isna(player):
+#                     continue
+#             except Exception:
+#                 pass
+
+#             player_name = str(player).strip()
+
+#             if not player_name or player_name == "nan":
+#                 continue
+
+#             matching_players = players_df[
+#                 players_df[player_col].astype(str).str.strip()
+#                 == player_name
+#             ]
+
+#             if matching_players.empty:
+
+#                 print(
+#                     f"Player not found in players.xlsx: "
+#                     f"{player_name}"
+#                 )
+
+#                 player_scores[player] = 0
+#                 continue
+
+#             value = matching_players.iloc[0].get(
+#                 player_period_col,
+#                 0
+#             )
+
+#             value = pd.to_numeric(
+#                 value,
+#                 errors="coerce"
+#             )
+
+#             if pd.isna(value):
+#                 value = 0
+
+#             player_scores[player] = value
+
+#     # ==================================================
+#     # MONTHLY / ROUND-BY-ROUND SCORES
+#     # ==================================================
+
+#     monthly_scores = []
+
+#     if user_row is not None:
+
+#         last_rounds = get_all_rounds_for_user(
+#             username
+#         )
+
+#         for r in last_rounds:
+
+#             round_cols = [
+#                 f"{r}p1",
+#                 f"{r}p2",
+#                 f"{r}p3",
+#                 f"{r}p4",
+#                 f"{r}pw"
+#             ]
+
+#             players = [
+#                 user_row.get(c)
+#                 for c in round_cols
+#             ]
+
+#             breakdown = {}
+
+#             # ------------------------------------------
+#             # Find the correct score column for this round
+#             # ------------------------------------------
+
+#             round_player_score_col = None
+
+#             if r in players_df.columns:
+#                 round_player_score_col = r
+
+#             elif f"{r}_score" in players_df.columns:
+#                 round_player_score_col = f"{r}_score"
+
+#             # ------------------------------------------
+#             # Calculate each player's score
+#             # ------------------------------------------
+
+#             for player in players:
+
+#                 if player is None:
+#                     continue
+
+#                 try:
+#                     if pd.isna(player):
+#                         continue
+#                 except Exception:
+#                     pass
+
+#                 player_name = str(player).strip()
+
+#                 if not player_name or player_name == "nan":
+#                     continue
+
+#                 score = 0
+
+#                 if (
+#                     round_player_score_col
+#                     and player_col in players_df.columns
+#                 ):
+
+#                     player_match = players_df[
+#                         players_df[player_col].astype(str).str.strip()
+#                         == player_name
+#                     ]
+
+#                     # IMPORTANT:
+#                     # Do not use iloc[0] unless we know a row exists.
+#                     if not player_match.empty:
+
+#                         raw_score = player_match.iloc[0].get(
+#                             round_player_score_col,
+#                             0
+#                         )
+
+#                         raw_score = pd.to_numeric(
+#                             raw_score,
+#                             errors="coerce"
+#                         )
+
+#                         if not pd.isna(raw_score):
+#                             score = raw_score
+
+#                 breakdown[player_name] = score
+
+#             # ------------------------------------------
+#             # Store monthly result
+#             # ------------------------------------------
+
+#             monthly_scores.append({
+#                 "Month": r,
+#                 "Fantasy Score": sum(
+#                     breakdown.values()
+#                 ),
+#                 "Breakdown": breakdown
+#             })
+
+#     # ==================================================
+#     # TOTAL SCORE
+#     # ==================================================
+
+#     try:
+
+#         user_score = sum(
+#             month["Fantasy Score"]
+#             for month in monthly_scores
+#         )
+
+#     except Exception as e:
+
+#         print(
+#             "Total user score error:",
+#             e
+#         )
+
+#         user_score = 0
+
+#     # ==================================================
+#     # MISSED ROUND FLAG
+#     # ==================================================
+
+#     if not active_round and user_row is not None:
+
+#         latest_team = [
+#             user_row.get(c)
+#             for c in latest_cols
+#         ]
+
+#         if any(p == "X" for p in latest_team):
+#             missed_round = True
+
+#     # ==================================================
+#     # RENDER
+#     # ==================================================
+
+#     return render_template(
+#         "dashboard.html",
+#         username=username,
+#         round_name=round_name,
+#         player_leaderboard=player_leaderboard,
+#         user_leaderboard=user_leaderboard,
+#         user_picks=user_picks,
+#         user_score=user_score,
+#         player_scores=player_scores,
+#         missed_round=missed_round,
+#         monthly_scores=monthly_scores
+#     )
+
 @app.route("/dashboard")
 def dashboard():
     if "username" not in session:
@@ -719,63 +1323,46 @@ def dashboard():
 
     username = normalize_username(session["username"])
 
-    # --------------------------------------------------
+    # ============================================================
     # LOAD CURRENT ROUND / DATA
-    # --------------------------------------------------
-    current_round_temp = get_active_round() or get_last_round()
-
-    if current_round_temp:
-        try:
-            calculate_monthly_player_scores(current_round_temp)
-        except Exception as e:
-            print("calculate_monthly_player_scores error:", e)
-
-        try:
-            recalculate_all_team_scores(current_round_temp)
-        except Exception as e:
-            print("recalculate_all_team_scores error:", e)
-
-    picks_df = normalize_username_column(load_picks())
-    players_df = load_players()
-
-    # --------------------------------------------------
-    # NORMALISE PLAYER COLUMN
-    # --------------------------------------------------
-    player_col = "player" if "player" in players_df.columns else "Player"
-
-    if player_col not in players_df.columns:
-        print("ERROR: No player column found in players.xlsx")
-        print("Players columns:", players_df.columns.tolist())
-
-        player_leaderboard = []
-        player_scores = {}
-    else:
-        players_df[player_col] = (
-            players_df[player_col]
-            .astype(str)
-            .str.strip()
-        )
-
-    # --------------------------------------------------
-    # USER ROW
-    # --------------------------------------------------
-    user_row_df = picks_df[picks_df["username"] == username]
-    user_row = user_row_df.iloc[0] if not user_row_df.empty else None
+    # ============================================================
 
     active_round = get_active_round()
     last_round = get_last_round()
 
-    # --------------------------------------------------
-    # NO ROUND
-    # --------------------------------------------------
     if not active_round and not last_round:
         return redirect(url_for("no_round"))
 
-    round_name = active_round if active_round else last_round
+    # The round we display on the dashboard.
+    # If a round is active, use it.
+    # Otherwise use the most recently completed round.
+    round_name = active_round or last_round
 
-    # --------------------------------------------------
-    # IF ROUND IS ACTIVE, MAKE SURE USER HAS SUBMITTED
-    # --------------------------------------------------
+    # Recalculate the current round before loading display data.
+    try:
+        calculate_monthly_player_scores(round_name)
+    except Exception as e:
+        print("calculate_monthly_player_scores error:", e)
+
+    try:
+        recalculate_all_team_scores(round_name)
+    except Exception as e:
+        print("recalculate_all_team_scores error:", e)
+
+    picks_df = normalize_username_column(load_picks())
+    players_df = load_players()
+
+    # ============================================================
+    # FIND USER
+    # ============================================================
+
+    user_row_df = picks_df[picks_df["username"] == username]
+    user_row = user_row_df.iloc[0] if not user_row_df.empty else None
+
+    # ============================================================
+    # IF ACTIVE ROUND, MAKE SURE USER HAS SUBMITTED
+    # ============================================================
+
     if active_round:
         round_cols = [
             f"{active_round}p1",
@@ -797,9 +1384,10 @@ def dashboard():
         if not user_has_submitted:
             return redirect(url_for("select_players"))
 
-    # --------------------------------------------------
-    # GET USER PICKS
-    # --------------------------------------------------
+    # ============================================================
+    # USER PICKS
+    # ============================================================
+
     latest_cols = [
         "latestp1",
         "latestp2",
@@ -813,15 +1401,15 @@ def dashboard():
 
     if active_round:
 
-        if user_row is not None:
-            round_cols = [
-                f"{active_round}p1",
-                f"{active_round}p2",
-                f"{active_round}p3",
-                f"{active_round}p4",
-                f"{active_round}pw"
-            ]
+        round_cols = [
+            f"{active_round}p1",
+            f"{active_round}p2",
+            f"{active_round}p3",
+            f"{active_round}p4",
+            f"{active_round}pw"
+        ]
 
+        if user_row is not None:
             user_picks = [
                 user_row.get(c)
                 for c in round_cols
@@ -829,6 +1417,7 @@ def dashboard():
 
     else:
 
+        # No active round — show the latest team.
         if user_row is not None:
 
             latest_team = [
@@ -836,12 +1425,13 @@ def dashboard():
                 for c in latest_cols
             ]
 
+            # ----------------------------------------------------
+            # USER MISSED LAST ROUND
+            # ----------------------------------------------------
+
             if any(p == "X" for p in latest_team):
 
-                last_round = get_last_round()
-
                 if not last_round:
-
                     flash(
                         "No last round found to assign random team.",
                         "danger"
@@ -937,101 +1527,142 @@ def dashboard():
 
             user_picks = [None] * 5
 
-    # ==================================================
-    # DETERMINE THE CORRECT PLAYER SCORE COLUMN
-    # ==================================================
-    #
-    # IMPORTANT:
-    #
-    # Your players.xlsx is using columns such as:
-    #
-    #     May2026
-    #     June2026
-    #     July2026
-    #     August2026
-    #
-    # Those are the actual player fantasy-score columns.
-    #
-    # Do NOT prefer August2026_score here because that can
-    # contain zeros even when August2026 contains the real
-    # scores.
-    #
-    # ==================================================
+    # ============================================================
+    # PLAYER COLUMN
+    # ============================================================
 
-    player_period_col = None
-
-    if round_name:
-
-        # FIRST: use the actual period column
-        if round_name in players_df.columns:
-            player_period_col = round_name
-
-        # FALLBACK: old *_score format
-        elif f"{round_name}_score" in players_df.columns:
-            player_period_col = f"{round_name}_score"
-
-    print(
-        "Dashboard round:",
-        round_name,
-        "| player score column:",
-        player_period_col
+    player_col = (
+        "player"
+        if "player" in players_df.columns
+        else "Player"
     )
 
-    # --------------------------------------------------
-    # CONVERT PLAYER SCORE COLUMN TO NUMERIC
-    # --------------------------------------------------
-    if player_period_col and player_period_col in players_df.columns:
+    # ============================================================
+    # HELPER:
+    # GET PLAYER SCORE FOR A SPECIFIC ROUND
+    #
+    # We prefer the actual round column, e.g. August2026.
+    # If that doesn't exist, fall back to August2026_score.
+    # ============================================================
 
-        players_df[player_period_col] = pd.to_numeric(
-            players_df[player_period_col],
-            errors="coerce"
-        ).fillna(0)
+    def get_player_round_score(player_name, round_key):
 
-    # ==================================================
-    # TOP PLAYERS LEADERBOARD
-    # ==================================================
+        if not round_key:
+            return 0
+
+        if pd.isna(player_name):
+            return 0
+
+        if player_name in ["", None, "X"]:
+            return 0
+
+        if player_col not in players_df.columns:
+            return 0
+
+        player_match = players_df[
+            players_df[player_col].astype(str).str.strip()
+            == str(player_name).strip()
+        ]
+
+        if player_match.empty:
+            return 0
+
+        row = player_match.iloc[0]
+
+        # --------------------------------------------------------
+        # First choice: actual round column
+        # e.g. August2026
+        # --------------------------------------------------------
+
+        if round_key in players_df.columns:
+
+            value = pd.to_numeric(
+                row.get(round_key),
+                errors="coerce"
+            )
+
+            if pd.notna(value):
+                return float(value)
+
+        # --------------------------------------------------------
+        # Second choice: *_score column
+        # --------------------------------------------------------
+
+        score_col = f"{round_key}_score"
+
+        if score_col in players_df.columns:
+
+            value = pd.to_numeric(
+                row.get(score_col),
+                errors="coerce"
+            )
+
+            if pd.notna(value):
+                return float(value)
+
+        return 0
+
+    # ============================================================
+    # CURRENT TEAM PLAYER SCORES
+    # ============================================================
+
+    player_scores = {}
+
+    for player in user_picks:
+
+        if pd.isna(player):
+            continue
+
+        player_scores[player] = get_player_round_score(
+            player,
+            round_name
+        )
+
+    # ============================================================
+    # TOP PLAYER LEADERBOARD
+    #
+    # IMPORTANT:
+    # Build this using the SAME scoring function as the team.
+    # This prevents the leaderboard showing 0 while the team
+    # scores are correct.
+    # ============================================================
+
     player_leaderboard = []
 
     try:
 
-        if (
-            player_period_col
-            and player_period_col in players_df.columns
-            and player_col in players_df.columns
-        ):
+        if player_col in players_df.columns:
 
-            top_players = (
-                players_df[
-                    [player_col, player_period_col]
-                ]
-                .copy()
-            )
+            leaderboard_rows = []
 
-            top_players[player_period_col] = pd.to_numeric(
-                top_players[player_period_col],
-                errors="coerce"
-            ).fillna(0)
+            for _, player_row in players_df.iterrows():
 
-            top_players = top_players.sort_values(
-                by=player_period_col,
-                ascending=False
-            ).head(10)
+                player_name = player_row.get(player_col)
 
-            player_leaderboard = (
-                top_players
-                .rename(
-                    columns={
-                        player_col: "Player",
-                        player_period_col: "Points"
-                    }
+                if pd.isna(player_name):
+                    continue
+
+                player_name = str(player_name).strip()
+
+                if not player_name:
+                    continue
+
+                score = get_player_round_score(
+                    player_name,
+                    round_name
                 )
-                .to_dict(orient="records")
+
+                leaderboard_rows.append({
+                    "Player": player_name,
+                    "Points": score
+                })
+
+            leaderboard_rows.sort(
+                key=lambda x: x["Points"],
+                reverse=True
             )
 
-        print(
-            "Top player leaderboard:",
-            player_leaderboard
-        )
+            player_leaderboard = leaderboard_rows[:10]
 
     except Exception as e:
 
@@ -1042,136 +1673,30 @@ def dashboard():
 
         player_leaderboard = []
 
-    # ==================================================
-    # USER LEADERBOARD
-    # ==================================================
+    # ============================================================
+    # MONTHLY SCORES / ROUND BREAKDOWN
     #
-    # Team scores are stored in picks.xlsx using the
-    # period name, e.g. August2026.
-    #
-    # Prefer that column.
-    #
-    # ==================================================
-
-    user_leaderboard = []
-
-    try:
-
-        user_score_col = None
-
-        if round_name in picks_df.columns:
-            user_score_col = round_name
-
-        elif f"{round_name}_score" in picks_df.columns:
-            user_score_col = f"{round_name}_score"
-
-        if user_score_col:
-
-            picks_df[user_score_col] = pd.to_numeric(
-                picks_df[user_score_col],
-                errors="coerce"
-            ).fillna(0)
-
-            user_leaderboard_df = (
-                picks_df[
-                    ["username", user_score_col]
-                ]
-                .sort_values(
-                    user_score_col,
-                    ascending=False
-                )
-                .head(5)
-            )
-
-            user_leaderboard_df = (
-                user_leaderboard_df.rename(
-                    columns={
-                        "username": "Participant",
-                        user_score_col: "Points"
-                    }
-                )
-            )
-
-            user_leaderboard = (
-                user_leaderboard_df
-                .to_dict(orient="records")
-            )
-
-    except Exception as e:
-
-        print(
-            "User leaderboard error:",
-            e
-        )
-
-        user_leaderboard = []
-
-    # ==================================================
-    # CURRENT TEAM PLAYER SCORES
-    # ==================================================
-
-    player_scores = {}
-
-    if user_picks and player_period_col and player_col in players_df.columns:
-
-        for player in user_picks:
-
-            # Ignore blank / NaN picks
-            if player is None:
-                continue
-
-            try:
-                if pd.isna(player):
-                    continue
-            except Exception:
-                pass
-
-            player_name = str(player).strip()
-
-            if not player_name or player_name == "nan":
-                continue
-
-            matching_players = players_df[
-                players_df[player_col].astype(str).str.strip()
-                == player_name
-            ]
-
-            if matching_players.empty:
-
-                print(
-                    f"Player not found in players.xlsx: "
-                    f"{player_name}"
-                )
-
-                player_scores[player] = 0
-                continue
-
-            value = matching_players.iloc[0].get(
-                player_period_col,
-                0
-            )
-
-            value = pd.to_numeric(
-                value,
-                errors="coerce"
-            )
-
-            if pd.isna(value):
-                value = 0
-
-            player_scores[player] = value
-
-    # ==================================================
-    # MONTHLY / ROUND-BY-ROUND SCORES
-    # ==================================================
+    # This calculates each round independently.
+    # ============================================================
 
     monthly_scores = []
 
     if user_row is not None:
 
-        last_rounds = get_all_rounds_for_user(
-            username
-        )
+        try:
+
+            last_rounds = get_all_rounds_for_user(
+                username
+            )
+
+        except Exception as e:
+
+            print(
+                "get_all_rounds_for_user error:",
+                e
+            )
+
+            last_rounds = []
 
         for r in last_rounds:
 
@@ -1190,104 +1715,139 @@ def dashboard():
 
             breakdown = {}
 
-            # ------------------------------------------
-            # Find the correct score column for this round
-            # ------------------------------------------
-
-            round_player_score_col = None
-
-            if r in players_df.columns:
-                round_player_score_col = r
-
-            elif f"{r}_score" in players_df.columns:
-                round_player_score_col = f"{r}_score"
-
-            # ------------------------------------------
-            # Calculate each player's score
-            # ------------------------------------------
-
             for player in players:
 
-                if player is None:
+                if pd.isna(player):
                     continue
 
-                try:
-                    if pd.isna(player):
-                        continue
-                except Exception:
-                    pass
-
-                player_name = str(player).strip()
-
-                if not player_name or player_name == "nan":
+                if player in ["", None, "X"]:
                     continue
 
-                score = 0
+                score = get_player_round_score(
+                    player,
+                    r
+                )
 
-                if (
-                    round_player_score_col
-                    and player_col in players_df.columns
-                ):
+                breakdown[player] = score
 
-                    player_match = players_df[
-                        players_df[player_col].astype(str).str.strip()
-                        == player_name
-                    ]
-
-                    # IMPORTANT:
-                    # Do not use iloc[0] unless we know a row exists.
-                    if not player_match.empty:
-
-                        raw_score = player_match.iloc[0].get(
-                            round_player_score_col,
-                            0
-                        )
-
-                        raw_score = pd.to_numeric(
-                            raw_score,
-                            errors="coerce"
-                        )
-
-                        if not pd.isna(raw_score):
-                            score = raw_score
-
-                breakdown[player_name] = score
-
-            # ------------------------------------------
-            # Store monthly result
-            # ------------------------------------------
+            round_total = sum(
+                breakdown.values()
+            )
 
             monthly_scores.append({
                 "Month": r,
-                "Fantasy Score": sum(
-                    breakdown.values()
-                ),
+                "Fantasy Score": round_total,
                 "Breakdown": breakdown
             })
 
-    # ==================================================
-    # TOTAL SCORE
-    # ==================================================
+    # ============================================================
+    # YOUR SCORE THIS MONTH
+    #
+    # ONLY the active round, or last round if no active round.
+    # ============================================================
+
+    your_score_this_month = 0
+
+    if user_picks:
+
+        your_score_this_month = sum(
+            get_player_round_score(
+                player,
+                round_name
+            )
+            for player in user_picks
+            if not pd.isna(player)
+            and player not in ["", None, "X"]
+        )
+
+    # ============================================================
+    # SEASON SCORE
+    #
+    # Total of ALL available round scores.
+    # ============================================================
+
+    season_score = sum(
+        month["Fantasy Score"]
+        for month in monthly_scores
+    )
+
+    # ============================================================
+    # USER LEADERBOARD
+    #
+    # For the current displayed round only.
+    # ============================================================
+
+    user_leaderboard = []
 
     try:
 
-        user_score = sum(
-            month["Fantasy Score"]
-            for month in monthly_scores
+        user_rows = []
+
+        for _, row in picks_df.iterrows():
+
+            participant = row.get("username")
+
+            if pd.isna(participant):
+                continue
+
+            participant = str(
+                participant
+            ).strip()
+
+            if not participant:
+                continue
+
+            participant_score = 0
+
+            for slot in [
+                "p1",
+                "p2",
+                "p3",
+                "p4",
+                "pw"
+            ]:
+
+                player = row.get(
+                    f"{round_name}{slot}"
+                )
+
+                if pd.isna(player):
+                    continue
+
+                if player in ["", None, "X"]:
+                    continue
+
+                participant_score += (
+                    get_player_round_score(
+                        player,
+                        round_name
+                    )
+                )
+
+            user_rows.append({
+                "Participant": participant,
+                "Points": participant_score
+            })
+
+        user_rows.sort(
+            key=lambda x: x["Points"],
+            reverse=True
         )
+
+        user_leaderboard = user_rows[:5]
 
     except Exception as e:
 
         print(
-            "Total user score error:",
+            "User leaderboard error:",
             e
         )
 
-        user_score = 0
+        user_leaderboard = []
 
-    # ==================================================
+    # ============================================================
     # MISSED ROUND FLAG
-    # ==================================================
+    # ============================================================
 
     if not active_round and user_row is not None:
 
@@ -1296,23 +1856,45 @@ def dashboard():
             for c in latest_cols
         ]
 
-        if any(p == "X" for p in latest_team):
+        if any(
+            p == "X"
+            for p in latest_team
+        ):
             missed_round = True
 
-    # ==================================================
+    # ============================================================
     # RENDER
-    # ==================================================
+    # ============================================================
 
     return render_template(
         "dashboard.html",
+
         username=username,
+
+        # Current round being displayed
         round_name=round_name,
+
+        # Player leaderboard
         player_leaderboard=player_leaderboard,
+
+        # User leaderboard
         user_leaderboard=user_leaderboard,
+
+        # Current team
         user_picks=user_picks,
-        user_score=user_score,
+
+        # THIS MONTH ONLY
+        user_score=your_score_this_month,
+
+        # TOTAL SEASON SCORE
+        season_score=season_score,
+
+        # Individual player scores for current round
         player_scores=player_scores,
+
         missed_round=missed_round,
+
+        # Monthly/round history
         monthly_scores=monthly_scores
     )
 
