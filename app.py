@@ -1763,13 +1763,53 @@ def dashboard():
     # ============================================================
     # SEASON SCORE
     #
-    # Total of ALL available round scores.
+    # Sum the user's score for EVERY round, independently.
+    # This must NOT use the current round only.
     # ============================================================
 
-    season_score = sum(
-        month["Fantasy Score"]
-        for month in monthly_scores
-    )
+    season_score = 0
+
+    if user_row is not None:
+
+        try:
+            last_rounds = get_all_rounds_for_user(username)
+
+            for r in last_rounds:
+
+                round_cols = [
+                    f"{r}p1",
+                    f"{r}p2",
+                    f"{r}p3",
+                    f"{r}p4",
+                    f"{r}pw"
+                ]
+
+                round_players = [
+                    user_row.get(c)
+                    for c in round_cols
+                ]
+
+                round_total = 0
+
+                for player in round_players:
+
+                    if pd.isna(player):
+                        continue
+
+                    if player in ["", None, "X"]:
+                        continue
+
+                    round_total += get_player_round_score(
+                        player,
+                        r
+                    )
+
+                season_score += round_total
+
+        except Exception as e:
+
+            print("Season score calculation error:", e)
+            season_score = 0
 
     # ============================================================
     # USER LEADERBOARD
